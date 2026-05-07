@@ -1,22 +1,17 @@
-"""
-Run this once after Railway deployment to set up DB.
-Railway runs this via: python startup.py
-"""
 import os
 import bcrypt
 from app import create_app
 from app.extensions import db
 from app.models import User, Campaign, Subscription
-from datetime import datetime, timedelta
 
 app = create_app('production')
 
 with app.app_context():
-    print("Creating tables...")
+    print("Creating all tables...", flush=True)
     db.create_all()
-    print("Tables created.")
+    print("Tables created.", flush=True)
 
-    # Create superadmin if not exists
+    # Superadmin
     admin = User.query.filter_by(email='brayo@squarerootinc.com').first()
     if not admin:
         pw = bcrypt.hashpw('Admin@2025!'.encode(), bcrypt.gensalt()).decode()
@@ -30,8 +25,8 @@ with app.app_context():
         )
         db.session.add(admin)
         db.session.commit()
-        print("Superadmin created: brayo@squarerootinc.com / Admin@2025!")
+        print("Superadmin created.", flush=True)
     else:
-        print("Superadmin already exists.")
+        print("Superadmin already exists.", flush=True)
 
-    print("Startup complete.")
+    print("Startup complete.", flush=True)
