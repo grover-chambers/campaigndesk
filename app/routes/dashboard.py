@@ -445,9 +445,34 @@ def ward_stats():
         elif score >= 20: heat = 'active'
         elif score >= 5: heat = 'warm'
         else: heat = 'cold'
-        stats.append({'ward': w, 'supporters': s, 'events': e, 'score': score, 'heat': heat})
+        stats.append({
+            'ward': w,
+            'ward_upper': w.upper().strip(),
+            'supporters': s,
+            'events': e,
+            'score': score,
+            'heat': heat
+        })
     stats.sort(key=lambda x: x['score'], reverse=True)
-    return jsonify({'wards': stats, 'constituency': campaign.constituency, 'county': campaign.county})
+    # Also return GeoJSON ward names for this constituency for reference
+    import json, os
+    geo_path = os.path.join(current_app.root_path, 'static', 'geo', 'wards.geojson')
+    geo_wards = []
+    try:
+        with open(geo_path) as f:
+            geo = json.load(f)
+        const_code = campaign.constituency_code
+        for feat in geo['features']:
+            p = feat['properties']
+            if const_code and str(int(float(p.get('CONST_CODE',0)))) == str(const_code):
+                geo_wards.append(p.get('COUNTY_A_1','').upper().strip())
+    except: pass
+    return jsonify({
+        'wards': stats,
+        'geo_wards': geo_wards,
+        'constituency': campaign.constituency,
+        'county': campaign.county
+    })
 
 
 # ── WhatsApp page ─────────────────────────────────────────────

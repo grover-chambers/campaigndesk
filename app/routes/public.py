@@ -128,3 +128,38 @@ def member_login():
     
     print(f"Login failed: Invalid credentials for {phone}")
     return jsonify({'success': False, 'error': 'Invalid phone or access code'}), 401
+
+@public_bp.route('/api/locations')
+def locations_api():
+    """Return full county->constituency->ward tree"""
+    import json, os
+    path = os.path.join(os.path.dirname(__file__), '..', 'data', 'kenyan_locations_clean.json')
+    with open(path) as f:
+        data = json.load(f)
+    return jsonify(data)
+
+@public_bp.route('/api/locations/constituencies/<county>')
+def constituencies_api(county):
+    import json, os
+    path = os.path.join(os.path.dirname(__file__), '..', 'data', 'kenyan_locations_clean.json')
+    with open(path) as f:
+        data = json.load(f)
+    county_data = data.get(county, {})
+    return jsonify(list(county_data.keys()))
+
+@public_bp.route('/api/locations/wards/<county>/<constituency>')
+def wards_api(county, constituency):
+    import json, os
+    path = os.path.join(os.path.dirname(__file__), '..', 'data', 'kenyan_locations_clean.json')
+    with open(path) as f:
+        data = json.load(f)
+    wards = data.get(county, {}).get(constituency, [])
+    return jsonify(wards)
+
+@public_bp.route('/api/iebc-codes')
+def iebc_codes_api():
+    import json, os
+    path = os.path.join(os.path.dirname(__file__), '..', 'data', 'iebc_codes.json')
+    with open(path) as f:
+        data = json.load(f)
+    return jsonify(data)
