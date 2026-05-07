@@ -1,0 +1,94 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Settings{% endblock %}
+{% block content %}
+
+<div class="two-col" style="align-items:start">
+  <div>
+    <div class="card">
+      <div class="card-title">🎨 Campaign profile</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+        This info appears on the public login page and supporter noticeboard.
+      </p>
+      <form method="POST" action="{{ url_for('dashboard.save_settings') }}">
+        <div class="form-group">
+          <label class="form-label">Candidate name</label>
+          <input type="text" value="{{ campaign.candidate_name }}" disabled style="opacity:.5;cursor:not-allowed" title="Contact admin to change">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Party</label>
+          <input type="text" value="{{ campaign.party }}" disabled style="opacity:.5;cursor:not-allowed">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Constituency / Ward</label>
+          <input type="text" value="{{ campaign.constituency }}" disabled style="opacity:.5;cursor:not-allowed">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Campaign slogan</label>
+          <input type="text" name="slogan" value="{{ campaign.slogan or '' }}" placeholder="e.g. Pamoja Tunajenga Embakasi">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Candidate bio</label>
+          <textarea name="bio" rows="5" placeholder="A short paragraph about the candidate — background, experience, and vision.">{{ campaign.bio or '' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Candidate photo URL</label>
+          <input type="text" name="photo_url" value="{{ campaign.candidate_photo or '' }}" placeholder="https://example.com/photo.jpg">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px">Paste a direct image URL. Photo appears on the login page and noticeboard.</div>
+        </div>
+        {% if campaign.candidate_photo %}
+        <div style="margin-bottom:14px">
+          <img src="{{ campaign.candidate_photo }}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+        </div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary">Save profile</button>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-title">👤 Your account</div>
+      <div style="font-size:13px;line-height:1.9">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--subtle)">
+          <span style="color:var(--muted)">Name</span>
+          <span style="font-weight:600">{{ member.name }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--subtle)">
+          <span style="color:var(--muted)">Phone</span>
+          <span>{{ member.phone }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--subtle)">
+          <span style="color:var(--muted)">Role</span>
+          <span class="badge badge-internal">{{ member.role|title }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0">
+          <span style="color:var(--muted)">Campaign</span>
+          <span>{{ campaign.candidate_name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0">
+      <div class="card-title">🔗 Quick links</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="/c/{{ campaign.slug }}/login" target="_blank" class="btn btn-ghost" style="justify-content:space-between">
+          Campaign login page <span>↗</span>
+        </a>
+        <a href="/c/{{ campaign.slug }}/board" target="_blank" class="btn btn-ghost" style="justify-content:space-between">
+          Public noticeboard <span>↗</span>
+        </a>
+      </div>
+      <div style="margin-top:14px;padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Your campaign URL</div>
+        <div style="font-size:12px;color:var(--text);word-break:break-all">/c/{{ campaign.slug }}/login</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0">
+      <div class="card-title" style="color:#f87171">⚠ Danger zone</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Sign out of your session on this device.</p>
+      <a href="{{ url_for('dashboard.logout') }}" class="btn btn-danger">Sign out</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

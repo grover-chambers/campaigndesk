@@ -1,0 +1,58 @@
+{% extends 'admin/base.html' %}
+{% block page_title %}Create campaign{% endblock %}
+{% block content %}
+<div style="max-width:720px">
+  <div class="card">
+    <div class="card-title">📋 New campaign details</div>
+    <form method="POST">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Candidate full name</label><input type="text" name="candidate_name" required placeholder="e.g. Julius Were"></div>
+        <div class="form-group"><label class="form-label">Party</label>
+          <select name="party">
+            {% for p in ['ODM','UDA','Jubilee','ANC','Wiper','KANU','Independent'] %}
+            <option value="{{ p }}">{{ p }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Seat level</label>
+          <select name="seat_level">
+            {% for s in ['MCA','MP','Senator','Governor','WomRep'] %}
+            <option value="{{ s }}">{{ s }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Tier</label>
+          <select name="tier">
+            <option value="starter">Starter (Ksh 2,500/mo)</option>
+            <option value="constituency">Constituency (Ksh 8,000/mo)</option>
+            <option value="county">County (custom)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">County</label><input type="text" name="county" required placeholder="e.g. Nairobi"></div>
+        <div class="form-group"><label class="form-label">Constituency</label><input type="text" name="constituency" placeholder="e.g. Embakasi East"></div>
+        <div class="form-group"><label class="form-label">Ward (MCA only)</label><input type="text" name="ward" placeholder="e.g. Kayole North"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">IEBC Constituency code <span style="font-weight:400;text-transform:none;color:var(--muted)">(for map boundary — e.g. 290 for Embakasi East)</span></label>
+        <input type="text" name="constituency_code" placeholder="3-digit IEBC code">
+      </div>
+      <div class="form-group"><label class="form-label">Campaign slogan</label><input type="text" name="slogan" placeholder="e.g. Pamoja Tunajenga Embakasi"></div>
+      <div class="form-group"><label class="form-label">Candidate bio</label><textarea name="bio" rows="3" placeholder="Short paragraph about the candidate…"></textarea></div>
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Campaign secretary</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Secretary full name</label><input type="text" name="secretary_name" required placeholder="e.g. Jane Muthoni"></div>
+          <div class="form-group"><label class="form-label">Secretary phone</label><input type="text" name="secretary_phone" required placeholder="07xx xxxxxx"></div>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Trial period (days)</label><input type="number" name="trial_days" value="30" min="1" max="365"></div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button type="submit" class="btn btn-primary">Create campaign</button>
+        <a href="{{ url_for('admin.campaigns') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

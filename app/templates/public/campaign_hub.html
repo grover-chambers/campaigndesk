@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ campaign.candidate_name }} — {{ campaign.party }}</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+            background: linear-gradient(135deg, #0a0f1a 0%, #111827 100%);
+            color:#e2e8f0;
+            min-height:100vh;
+        }
+        
+        /* Party colors from CSS variables - injected dynamically */
+        :root {
+            --party-primary: {{ party_color.primary }}
+            --party-secondary: {{ party_color.secondary }};
+            --party-secondary: {{ party_color.secondary }};
+            --party-primary-rgb: {{ party_color.primary_rgb }};
+        }
+        
+        .container{max-width:1400px;margin:0 auto;padding:0 24px;}
+        
+        /* Header with party color bar */
+        .header{
+            background: rgba(10,15,26,0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 3px solid var(--party-primary);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
+        .logo-icon{
+            width:36px;height:36px;
+            background:var(--party-primary);
+            border-radius:10px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .logo-icon svg{width:20px;height:20px;fill:#0a0f1a;}
+        .logo-text{font-size:22px;font-weight:800;color:white;}
+        .logo-text span{color:var(--party-primary);}
+        
+        /* Two column layout */
+        .two-column{
+            display:grid;
+            grid-template-columns: 1fr 380px;
+            gap: 32px;
+            margin: 40px 0;
+        }
+        
+        /* Left Column - Campaign Profile & Tabs */
+        .profile-card{
+            background:#111827;
+            border:1px solid #1f2937;
+            border-radius:24px;
+            overflow:hidden;
+            margin-bottom:24px;
+        }
+        
+        .profile-header{
+            background: linear-gradient(135deg, rgba(var(--party-primary-rgb), 0.15), transparent);
+            padding: 32px;
+            border-bottom: 1px solid #1f2937;
+        }
+        
+        .party-badge{
+            display:inline-block;
+            background:var(--party-primary);
+            color:#fff;
+            font-size:11px;
+            font-weight:700;
+            padding:4px 12px;
+            border-radius:20px;
+            margin-bottom:16px;
+        }
+        
+        .candidate-name{
+            font-size:36px;
+            font-weight:800;
+            margin-bottom:8px;
+        }
+        
+        .constituency{
+            color:var(--party-primary);
+            font-size:14px;
+            font-weight:600;
+            margin-bottom:12px;
+        }
+        
+        .slogan{
+            color:#94a3b8;
+            font-style:italic;
+            margin-bottom:16px;
+        }
+        
+        .stats{
+            display:flex;
+            gap:32px;
+            margin-top:24px;
+            padding-top:24px;
+            border-top:1px solid #1f2937;
+        }
+        
+        .stat{text-align:center;}
+        .stat-number{font-size:28px;font-weight:800;color:var(--party-primary);}
+        .stat-label{font-size:11px;color:#64748b;margin-top:4px;}
+        
+        /* Tabs */
+        .tabs{
+            display:flex;
+            gap:4px;
+            background:#0a0f1a;
+            border-bottom:1px solid #1f2937;
+            padding:0 24px;
+        }
+        
+        .tab-btn{
+            padding:16px 24px;
+            background:transparent;
+            border:none;
+            color:#94a3b8;
+            font-weight:600;
+            cursor:pointer;
+            transition:all 0.2s;
+            border-bottom:2px solid transparent;
+        }
+        
+        .tab-btn:hover{color:var(--party-primary);}
+        .tab-btn.active{
+            color:var(--party-primary);
+            border-bottom-color:var(--party-primary);
+        }
+        
+        .tab-content{
+            padding:32px;
+            display:none;
+            animation:fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active{display:block;}
+        
+        @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+        
+        /* Bulletin items */
+        .bulletin-item{
+            background:#0a0f1a;
+            border-radius:16px;
+            padding:20px;
+            margin-bottom:16px;
+            border-left:3px solid var(--party-primary);
+        }
+        
+        .bulletin-tag{
+            display:inline-block;
+            font-size:10px;
+            font-weight:700;
+            padding:2px 10px;
+            border-radius:12px;
+            margin-bottom:10px;
+        }
+        
+        .tag-update{background:rgba(234,179,8,0.2);color:#eab308;}
+        .tag-pledge{background:rgba(16,185,129,0.2);color:#10b981;}
+        .tag-event{background:rgba(59,130,246,0.2);color:#3b82f6;}
+        
+        .bulletin-title{font-size:16px;font-weight:600;margin-bottom:8px;}
+        .bulletin-content{color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:8px;}
+        .bulletin-date{font-size:11px;color:#64748b;}
+        
+        /* Manifesto */
+        .manifesto-content{line-height:1.8;color:#cbd5e1;}
+        .manifesto-section{margin-bottom:24px;}
+        .manifesto-section h3{color:var(--party-primary);margin-bottom:12px;}
+        
+        /* Right Column - Login Panel */
+        .login-card{
+            background:#111827;
+            border:1px solid #1f2937;
+            border-radius:24px;
+            padding:32px;
+            position:sticky;
+            top:100px;
+        }
+        
+        .login-card h2{
+            font-size:24px;
+            margin-bottom:8px;
+            color:var(--party-primary);
+        }
+        
+        .login-card p{color:#94a3b8;font-size:13px;margin-bottom:24px;}
+        
+        .form-group{margin-bottom:20px;}
+        .form-group label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:#cbd5e1;}
+        .form-group input{
+            width:100%;
+            padding:12px;
+            background:#0a0f1a;
+            border:1px solid #1f2937;
+            border-radius:12px;
+            color:white;
+            font-size:14px;
+        }
+        .form-group input:focus{outline:none;border-color:var(--party-primary);}
+        
+        .btn-login{
+            width:100%;
+            background:var(--party-primary);
+            color:#fff;
+            padding:12px;
+            border:none;
+            border-radius:12px;
+            font-weight:700;
+            font-size:14px;
+            cursor:pointer;
+            transition:transform 0.2s;
+        }
+        .btn-login:hover{transform:translateY(-2px);}
+        
+        .error{
+            border:1px solid #ef4444;
+            background:rgba(239,68,68,0.1);
+            padding:12px;
+            border-radius:12px;
+            color:#ef4444;
+            font-size:13px;
+            margin-bottom:20px;
+            display:none;
+        }
+        
+        footer{
+            border-top:1px solid #1f2937;
+            padding:32px 0;
+            text-align:center;
+            color:#64748b;
+            font-size:13px;
+            margin-top:40px;
+        }
+        
+        @media(max-width:968px){
+            .two-column{grid-template-columns:1fr;}
+            .login-card{position:static;}
+            .candidate-name{font-size:28px;}
+        }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon"><svg viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="5" rx="1.5"/><rect x="8" y="1" width="5" height="5" rx="1.5"/><rect x="1" y="8" width="5" height="5" rx="1.5"/><rect x="8" y="8" width="5" height="5" rx="1.5"/></svg></div>
+            <div class="logo-text">Campaign<span>Desk</span></div>
+        </a>
+    </div>
+</header>
+
+<div class="container">
+    <div class="two-column">
+        <!-- Left Column -->
+        <div>
+            <!-- Campaign Profile -->
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div class="party-badge">{{ campaign.party }}</div>
+                    <h1 class="candidate-name">{{ campaign.candidate_name }}</h1>
+                    <p class="constituency">{{ campaign.constituency }}</p>
+                    {% if campaign.slogan %}<p class="slogan">"{{ campaign.slogan }}"</p>{% endif %}
+                    <div class="stats">
+                        <div class="stat">
+                            <div class="stat-number">{{ member_count }}</div>
+                            <div class="stat-label">Supporters</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">{{ event_count }}</div>
+                            <div class="stat-label">Events</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-number">{{ bulletin_count }}</div>
+                            <div class="stat-label">Updates</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="bulletin">📢 Bulletin</button>
+                    <button class="tab-btn" data-tab="manifesto">📜 Manifesto</button>
+                    <button class="tab-btn" data-tab="gallery">🖼️ Gallery</button>
+                </div>
+                
+                <!-- Bulletin Tab -->
+                <div class="tab-content active" id="bulletin">
+                    {% if bulletins %}
+                        {% for b in bulletins %}
+                        <div class="bulletin-item">
+                            <span class="bulletin-tag tag-{{ b.tag }}">{{ b.tag|upper }}</span>
+                            <div class="bulletin-title">{{ b.title }}</div>
+                            <div class="bulletin-content">{{ b.content }}</div>
+                            <div class="bulletin-date">{{ b.published_at.strftime('%d %b %Y') }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align:center; padding:40px; color:#64748b;">
+                            <p>No bulletins posted yet.</p>
+                            <p style="font-size:12px; margin-top:8px;">Check back soon for campaign updates!</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Manifesto Tab -->
+                <div class="tab-content" id="manifesto">
+                    <div class="manifesto-content">
+                        {% if campaign.manifesto %}
+                            {{ campaign.manifesto|safe }}
+                        {% else %}
+                            <div style="text-align:center; padding:40px; color:#64748b;">
+                                <p>📜 Manifesto coming soon.</p>
+                                <p style="font-size:12px; margin-top:8px;">The candidate will share their vision here.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Gallery Tab -->
+                <div class="tab-content" id="gallery">
+                    <div style="text-align:center; padding:40px; color:#64748b;">
+                        <p>🖼️ Gallery coming soon</p>
+                        <p style="font-size:12px; margin-top:8px;">Campaign photos will be added here.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column - Team Login -->
+        <div class="login-card">
+            <h2>Team Login</h2>
+            <p>Enter your credentials to access the campaign dashboard</p>
+            <div id="errorMsg" class="error"></div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Phone number</label>
+                    <input type="tel" id="phone" placeholder="0712345678" required>
+                </div>
+                <div class="form-group">
+                    <label>Access code</label>
+                    <input type="password" id="code" placeholder="6-digit code" required>
+                </div>
+                <button type="submit" class="btn-login">Sign in →</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="container">
+        <p>© 2025 CampaignDesk — Empowering Kenyan campaigns</p>
+    </div>
+</footer>
+
+<script>
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    
+    // Login form
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const phone = document.getElementById('phone').value.trim();
+        const code = document.getElementById('code').value.trim();
+        const errorDiv = document.getElementById('errorMsg');
+        
+        errorDiv.style.display = 'none';
+        
+        try {
+            const response = await fetch('/api/member/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    campaign_slug: '{{ campaign.slug }}',
+                    phone: phone,
+                    access_code: code
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                localStorage.setItem('member_token', data.token);
+                localStorage.setItem('member_name', data.name);
+                localStorage.setItem('campaign_slug', '{{ campaign.slug }}');
+                window.location.href = '/dashboard/member';
+            } else {
+                errorDiv.textContent = data.error || 'Invalid phone or access code';
+                errorDiv.style.display = 'block';
+            }
+        } catch (err) {
+            errorDiv.textContent = 'Login failed. Please try again.';
+            errorDiv.style.display = 'block';
+        }
+    });
+</script>
+</body>
+</html>

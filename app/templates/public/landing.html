@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampaignDesk — The Campaign Management Platform for Kenya</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: #0a0f1a;
+            color: #e2e8f0;
+            line-height: 1.5;
+        }
+
+        :root {
+            --bg-dark: #0a0f1a;
+            --bg-card: #111827;
+            --bg-elevated: #1e293b;
+            --border: #1f2937;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #eab308;
+            --accent-dark: #ca8a04;
+            --accent-glow: rgba(234, 179, 8, 0.15);
+            --success: #10b981;
+            --info: #3b82f6;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(10, 15, 26, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 16px 0;
+        }
+
+        .header-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: #0a0f1a;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        .nav {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav a:hover {
+            color: var(--accent);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #0a0f1a;
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 10px 24px;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn-large {
+            padding: 14px 36px;
+            font-size: 16px;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--accent-glow);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            margin-bottom: 32px;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin: 0 auto 32px;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        /* Problem section */
+        .problem {
+            background: var(--bg-card);
+            border-radius: 32px;
+            padding: 60px;
+            margin: 40px 0;
+        }
+
+        .section-label {
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            max-width: 640px;
+            margin: 0 auto 48px;
+            font-size: 16px;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-bottom: 48px;
+        }
+
+        .problem-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            text-align: center;
+        }
+
+        .problem-icon {
+            font-size: 40px;
+            margin-bottom: 20px;
+        }
+
+        .problem-card h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .problem-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .solution-statement {
+            text-align: center;
+            background: linear-gradient(135deg, var(--accent-glow), transparent);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(234, 179, 8, 0.2);
+        }
+
+        .solution-statement h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .solution-statement p {
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Campaign finder */
+        .finder {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 40px;
+            margin: 40px 0;
+            text-align: center;
+        }
+
+        .finder h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .finder p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 14px 20px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 48px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .search-box button {
+            background: var(--accent);
+            border: none;
+            padding: 0 28px;
+            border-radius: 48px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #0a0f1a;
+        }
+
+        .results {
+            margin-top: 24px;
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .result-card {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+
+        .result-card:hover {
+            border-color: var(--accent);
+        }
+
+        .result-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .result-info p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .result-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        /* Pricing */
+        .pricing {
+            padding: 60px 0;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .pricing-card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 32px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+        }
+
+        .pricing-card.recommended {
+            border: 2px solid var(--accent);
+            background: linear-gradient(135deg, var(--bg-card), rgba(234, 179, 8, 0.05));
+        }
+
+        .recommended-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: #0a0f1a;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 16px;
+            border-radius: 40px;
+            text-transform: uppercase;
+        }
+
+        .seat-badge {
+            display: inline-block;
+            background: rgba(234, 179, 8, 0.1);
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .pricing-card h3 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .price {
+            font-size: 36px;
+            font-weight: 800;
+            margin: 16px 0 4px;
+        }
+
+        .price span {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--text-secondary);
+        }
+
+        .pricing-desc {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .features-list {
+            list-style: none;
+            margin: 24px 0;
+        }
+
+        .features-list li {
+            padding: 10px 0;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .features-list li::before {
+            content: "✓";
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .pricing-card .btn-outline,
+        .pricing-card .btn-primary {
+            width: 100%;
+            text-align: center;
+            display: block;
+            margin-top: 16px;
+        }
+
+        /* About us */
+        .about {
+            background: var(--bg-card);
+            border-radius: 32px;
+            padding: 60px;
+            margin: 40px 0;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .about-content h3 {
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        .about-content p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.7;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* FAQ */
+        .faq {
+            padding: 60px 0;
+        }
+
+        .faq-grid {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .faq-item h4 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: var(--accent);
+        }
+
+        .faq-item p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .privacy-note {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .privacy-note h4 {
+            color: var(--info);
+            margin-bottom: 12px;
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding: 48px 0;
+            margin-top: 60px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 0 20px; }
+            .hero h1 { font-size: 36px; }
+            .problem-grid { grid-template-columns: 1fr; }
+            .about-grid { grid-template-columns: 1fr; }
+            .pricing-grid { grid-template-columns: 1fr; }
+            .nav { display: none; }
+            .hero-buttons { flex-direction: column; align-items: center; }
+            .search-box { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="container header-inner">
+        <a href="/" class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 14 14">
+                    <rect x="1" y="1" width="5" height="5" rx="1.5"/>
+                    <rect x="8" y="1" width="5" height="5" rx="1.5"/>
+                    <rect x="1" y="8" width="5" height="5" rx="1.5"/>
+                    <rect x="8" y="8" width="5" height="5" rx="1.5"/>
+                </svg>
+            </div>
+            <div class="logo-text">Campaign<span>Desk</span></div>
+        </a>
+        <div class="nav">
+            <a href="#problem">Problem</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#about">About</a>
+            <a href="#faq">FAQ</a>
+            <a href="/auth/signup" class="btn-outline">Start free trial →</a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+        <!-- Hero -->
+        <div class="hero">
+            <div class="hero-badge">🇰🇪 Built for Kenyan campaigns</div>
+            <h1>Stop running your campaign<br>from a WhatsApp group</h1>
+            <p>The first all-in-one campaign management platform designed for Kenya's political landscape. Organize your team, track members, coordinate meetings, and keep supporters informed — all in one place.</p>
+            <div class="hero-buttons">
+                <a href="#pricing" class="btn-primary btn-large">Start your campaign →</a>
+                <a href="#problem" class="btn-outline btn-large">How it works</a>
+            </div>
+        </div>
+
+        <!-- Problem / Solution section -->
+        <div id="problem">
+            <div class="section-label">The problem</div>
+            <div class="section-title">Running a campaign shouldn't be chaos</div>
+            <div class="section-subtitle">Today's campaign teams struggle with scattered tools, missed coordination, and no clear picture of their ground game.</div>
+            
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">📱</div>
+                    <h3>Scattered communication</h3>
+                    <p>5 different WhatsApp groups, missed messages, and no single source of truth for your team.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">📝</div>
+                    <h3>Excel spreadsheet chaos</h3>
+                    <p>Member lists that go out of date, manual tracking, and no way to see who's actually active.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">🔇</div>
+                    <h3>Supporters in the dark</h3>
+                    <p>No public presence. Supporters don't know about events, pledges, or how to get involved.</p>
+                </div>
+            </div>
+
+            <div class="solution-statement">
+                <h3>CampaignDesk fixes this.</h3>
+                <p>A single platform where candidates, secretaries, agents, and supporters all stay connected. Real-time member tracking, meeting coordination, and a public noticeboard that keeps everyone informed — without the chaos.</p>
+            </div>
+        </div>
+
+        <!-- Campaign Finder -->
+        <div class="finder">
+            <h2>Find your candidate</h2>
+            <p>Search by name or constituency to view their campaign noticeboard</p>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="e.g., Julius Were, Kasarani, ODM..." autocomplete="off">
+                <button id="searchBtn">Search →</button>
+            </div>
+            <div id="results" class="results"></div>
+        </div>
+
+        <!-- Pricing -->
+        <div id="pricing" class="pricing">
+            <div class="section-label">Pricing</div>
+            <div class="section-title">Pay only for what you need</div>
+            <div class="section-subtitle">Tiered pricing based on the office you're seeking. No hidden fees, cancel anytime.</div>
+
+            <div class="pricing-grid">
+                <!-- MCA -->
+                <div class="pricing-card">
+                    <div class="seat-badge">🏛️ Ward Level</div>
+                    <h3>MCA</h3>
+                    <div class="price">Ksh 3,000 <span>/month</span></div>
+                    <p class="pricing-desc">For Member of County Assembly campaigns</p>
+                    <ul class="features-list">
+                        <li>Ward-level member management</li>
+                        <li>Meeting scheduling & tracking</li>
+                        <li>Public noticeboard</li>
+                        <li>Up to 5 team members</li>
+                        <li>Basic analytics dashboard</li>
+                        <li>Email support</li>
+                    </ul>
+                    <a href="/auth/signup" class="btn-outline">Start free trial →</a>
+                </div>
+
+                <!-- MP -->
+                <div class="pricing-card recommended">
+                    <div class="recommended-badge">Most popular</div>
+                    <div class="seat-badge">🏛️ Constituency Level</div>
+                    <h3>Member of Parliament</h3>
+                    <div class="price">Ksh 8,000 <span>/month</span></div>
+                    <p class="pricing-desc">For parliamentary campaigns — includes all wards in your constituency</p>
+                    <ul class="features-list">
+                        <li>Constituency-wide member management</li>
+                        <li>Sub-ward / polling station tracking</li>
+                        <li>Multi-ward coordination dashboard</li>
+                        <li>Unlimited team members</li>
+                        <li>Advanced analytics & reports</li>
+                        <li>Priority support</li>
+                        <li>Export member & meeting data</li>
+                    </ul>
+                    <a href="/auth/signup" class="btn-primary">Start free trial →</a>
+                </div>
+
+                <!-- Women Rep -->
+                <div class="pricing-card">
+                    <div class="seat-badge">🏛️ County Level</div>
+                    <h3>Women Representative</h3>
+                    <div class="price">Ksh 15,000 <span>/month</span></div>
+                    <p class="pricing-desc">For county-wide campaigns — track across all constituencies</p>
+                    <ul class="features-list">
+                        <li>County-wide member database</li>
+                        <li>All wards & constituencies tracking</li>
+                        <li>Cross-constituency coordination</li>
+                        <li>Unlimited team members</li>
+                        <li>Custom reporting dashboard</li>
+                        <li>Phone & priority support</li>
+                        <li>Bulk SMS integration</li>
+                    </ul>
+                    <a href="/auth/signup" class="btn-outline">Start free trial →</a>
+                </div>
+
+                <!-- Senator / Governor -->
+                <div class="pricing-card">
+                    <div class="seat-badge">🏛️ County / Regional Level</div>
+                    <h3>Senator / Governor</h3>
+                    <div class="price">Ksh 20,000 <span>/month</span></div>
+                    <p class="pricing-desc">Full county or regional campaign management</p>
+                    <ul class="features-list">
+                        <li>Full county-wide operations</li>
+                        <li>Sub-county & ward-level granularity</li>
+                        <li>Multi-team coordination dashboard</li>
+                        <li>Unlimited everything</li>
+                        <li>Advanced analytics + custom reports</li>
+                        <li>24/7 dedicated support</li>
+                        <li>API access for custom integrations</li>
+                        <li>M-Pesa bulk payment integration</li>
+                    </ul>
+                    <a href="/auth/signup?seat=governor" class="btn-outline">Contact sales →</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- About Us -->
+        <div id="about" class="about">
+            <div class="about-grid">
+                <div class="about-content">
+                    <div class="section-label" style="text-align: left;">About us</div>
+                    <h3>We're building the operating system for Kenyan political campaigns</h3>
+                    <p>CampaignDesk was born from a simple observation: Kenyan campaigns run on WhatsApp, Excel, and hope. Secretaries juggle multiple spreadsheets, agents miss updates in crowded groups, and supporters have nowhere to go for information.</p>
+                    <p>We're a team of Kenyan developers and campaign strategists who've been in the trenches. We built CampaignDesk to give every candidate — from MCA to Governor — a professional tool that doesn't require a tech degree to use.</p>
+                    <p>Our platform keeps your campaign data separate, secure, and organized. No more "which WhatsApp group had that update?" Just a clean dashboard that shows you exactly where your campaign stands.</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat">
+                        <div class="stat-number">50+</div>
+                        <div class="stat-label">Active campaigns</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">2,000+</div>
+                        <div class="stat-label">Team members</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Kenya-hosted</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label">Support</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div id="faq" class="faq">
+            <div class="section-label">Questions?</div>
+            <div class="section-title">Frequently asked questions</div>
+            <div class="section-subtitle">Everything you need to know about CampaignDesk</div>
+
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <h4>How is my campaign's data kept private?</h4>
+                    <p>Each campaign has completely isolated data. Your member lists, meeting notes, and strategy documents are never shared with other campaigns — even on the same platform. We use database-level separation (campaign_id) and enforce strict access controls. No campaign can see another's data. Period.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>Who owns my campaign data?</h4>
+                    <p>You do. 100%. You can export all your member data, meeting records, and activity logs at any time. If you cancel your subscription, you get a full export before we delete anything. We don't sell or share your data with anyone — including political parties or third parties.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>Where is my data hosted?</h4>
+                    <p>All data is hosted in Kenya on local servers. This means faster access for your team, and full compliance with Kenyan data protection laws. No international data transfers unless you explicitly request a backup export.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>Can my supporters see internal campaign strategy?</h4>
+                    <p>No. The public noticeboard only shows what you choose to publish — updates, event announcements, and pledges. Your internal team dashboard, member roster, meeting minutes, and strategy notes are completely private and require team login credentials.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>What happens if I upgrade or downgrade my plan?</h4>
+                    <p>Changes take effect immediately. Upgrade and you get access to new features right away. Downgrade — you keep access to your data but lose higher-tier features. We'll never delete your data without giving you 30 days notice and an export option.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>How do team members log in?</h4>
+                    <p>Each team member gets their own phone number and access code. You can add or remove team members from your dashboard anytime. Secretaries have full access, agents can manage members, coordinators can view schedules — all role-based.</p>
+                </div>
+                <div class="faq-item">
+                    <h4>Is there a free plan?</h4>
+                    <p>We don't offer a free plan because campaigns need reliable, supported software. We do offer a 14-day free trial on all plans so you can test everything before committing. No credit card required to start the trial.</p>
+                </div>
+            </div>
+
+            <div class="privacy-note">
+                <h4>🔒 Our data privacy commitment</h4>
+                <p>We treat campaign data with the same care we'd want for our own. Each campaign's data is fully isolated, encrypted at rest, and accessible only to authorized team members. We never share data between campaigns, with political parties, or with third parties. Your strategy, your member lists, your meetings — they stay yours. Period.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <p>© 2025 CampaignDesk — Built with 🇰🇪 for Kenyan campaigns. All rights reserved.</p>
+        <p style="margin-top: 12px; font-size: 11px;">CampaignDesk is an independent platform and is not affiliated with any political party.</p>
+    </div>
+</footer>
+
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsDiv = document.getElementById('results');
+
+    async function searchCampaigns() {
+        const q = searchInput.value.trim();
+        if (q.length < 2) {
+            resultsDiv.style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/find-campaign?q=${encodeURIComponent(q)}`);
+            const campaigns = await response.json();
+            
+            if (campaigns.length === 0) {
+                resultsDiv.innerHTML = '<div class="result-card"><div class="result-info"><h4>No campaigns found</h4><p>Try a different name or constituency</p></div></div>';
+                resultsDiv.style.display = 'flex';
+                return;
+            }
+
+            resultsDiv.innerHTML = campaigns.map(c => `
+                <div class="result-card">
+                    <div class="result-info">
+                        <h4>${c.candidate}</h4>
+                        <p>${c.constituency} · ${c.party} · ${c.seat_level}</p>
+                    </div>
+                    <a href="/c/${c.slug}/login" class="result-link">View campaign →</a>
+                </div>
+            `).join('');
+            resultsDiv.style.display = 'flex';
+        } catch (error) {
+            console.error('Search error:', error);
+        }
+    }
+
+    searchBtn.addEventListener('click', searchCampaigns);
+    searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchCampaigns();
+    });
+</script>
+</body>
+</html>
+<script>
+// Override the search function to add "not found" handling
+const originalSearch = searchCampaigns;
+window.searchCampaigns = async function() {
+    const q = searchInput.value.trim();
+    if (q.length < 2) {
+        resultsDiv.style.display = 'none';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/find-campaign?q=${encodeURIComponent(q)}`);
+        const campaigns = await response.json();
+        
+        if (campaigns.length === 0) {
+            resultsDiv.innerHTML = `
+                <div class="result-card" style="flex-direction: column; text-align: center; gap: 16px;">
+                    <div class="result-info">
+                        <h4>No campaigns found for "${q}"</h4>
+                        <p>This candidate might not be on CampaignDesk yet.</p>
+                    </div>
+                    <a href="/auth/signup" class="btn-primary" style="display: inline-block; font-size: 13px; padding: 8px 20px;">Start a new campaign →</a>
+                </div>
+            `;
+            resultsDiv.style.display = 'flex';
+            return;
+        }
+
+        resultsDiv.innerHTML = campaigns.map(c => `
+            <div class="result-card">
+                <div class="result-info">
+                    <h4>${c.candidate}</h4>
+                    <p>${c.constituency} · ${c.party} · ${c.seat_level}</p>
+                </div>
+                <a href="/c/${c.slug}/login" class="result-link">View campaign →</a>
+            </div>
+        `).join('');
+        resultsDiv.style.display = 'flex';
+    } catch (error) {
+        console.error('Search error:', error);
+    }
+};
+
+// Replace the search function
+searchBtn.removeEventListener('click', searchCampaigns);
+searchBtn.addEventListener('click', window.searchCampaigns);
+searchInput.removeEventListener('keypress', searchCampaigns);
+searchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') window.searchCampaigns();
+});
+</script>

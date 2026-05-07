@@ -1,0 +1,493 @@
+{% extends 'admin/base.html' %}
+{% block page_title %}Platform Intelligence{% endblock %}
+{% block content %}
+
+<div id="loading" style="text-align:center;padding:60px;color:var(--muted)">
+  <div style="font-size:32px;margin-bottom:12px">⟳</div>
+  <div style="font-size:13px">Loading platform intelligence…</div>
+</div>
+
+<div id="intel" style="display:none">
+
+  <!-- Pulse strip -->
+  <div class="card" style="padding:16px 20px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Platform pulse — last 24h</div>
+      <div id="pulse-total" style="font-size:12px;color:var(--muted)"></div>
+    </div>
+    <canvas id="pulse-canvas" height="48" style="width:100%;display:block"></canvas>
+  </div>
+
+  <!-- Top stat row -->
+  <div class="stat-grid" style="grid-template-columns:repeat(7,1fr);margin-bottom:14px" id="top-stats"></div>
+
+  <!-- Scorecard wall -->
+  <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Campaign health scorecards</div>
+  <div id="scorecard-wall" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px"></div>
+
+  <!-- Two col: subscription gantt + seat pyramid -->
+  <div class="two-col" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">💳 Subscription timeline</div>
+      <div id="gantt-wrap"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏛 Seat hierarchy</div>
+      <canvas id="pyramid-canvas" height="200" style="width:100%;display:block"></canvas>
+      <div id="seat-legend" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- Activity heatmap -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">📅 Activity heatmap — last 60 days</div>
+    <div id="heatmap-wrap" style="overflow-x:auto"></div>
+  </div>
+
+  <!-- Kenya competition map -->
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div class="card-title" style="margin:0">🗺 Kenya — campaign competition map</div>
+      <div style="font-size:11px;color:var(--muted)">Bubble = campaign · Size = supporter count · Color = party</div>
+    </div>
+    <div id="kenya-map" style="height:480px"></div>
+  </div>
+
+  <!-- Party breakdown -->
+  <div class="card">
+    <div class="card-title">🎨 Party distribution</div>
+    <div id="party-wrap" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+  </div>
+
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const PARTY_COLORS = {
+  ODM:'#006633', UDA:'#F5A623', Jubilee:'#D71920',
+  ANC:'#00A651', Wiper:'#8B0000', KANU:'#000000', Independent:'#e8a838'
+}
+const SEAT_ORDER  = ['Governor','Senator','WomRep','MP','MCA']
+const SEAT_COLORS = ['#7c3aed','#2563eb','#0891b2','#059669','#d97706']
+const HEAT_COLORS = {cold:'#ef4444',warm:'#f97316',active:'#22c55e',hot:'#16a34a'}
+
+fetch('/admin/api/intelligence')
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('loading').style.display = 'none'
+    document.getElementById('intel').style.display   = 'block'
+
+    drawPulse(data.pulse)
+    drawTopStats(data.totals, data.scorecards)
+    drawScorecards(data.scorecards)
+    drawGantt(data.gantt)
+    drawPyramid(data.seats)
+    drawHeatmap(data.heatmap)
+    drawKenyaMap(data.scorecards, data.county_data)
+    drawParties(data.parties, data.scorecards)
+  })
+  .catch(e => {
+    document.getElementById('loading').innerHTML =
+      '<div style="color:#f87171;font-size:13px">Failed to load: '+e.message+'</div>'
+  })
+
+// ── PULSE ─────────────────────────────────────────────────────
+function drawPulse(pulse) {
+  const canvas = document.getElementById('pulse-canvas')
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio || 800
+  const ctx = canvas.getContext('2d')
+  const vals = Object.values(pulse)
+  const labels = Object.keys(pulse)
+  const max = Math.max(...vals, 1)
+  const W = canvas.width, H = canvas.height * window.devicePixelRatio || 48
+  canvas.height = 48 * (window.devicePixelRatio || 1)
+  const total = vals.reduce((a,b)=>a+b,0)
+  document.getElementById('pulse-total').textContent = total + ' actions total'
+
+  ctx.scale(window.devicePixelRatio||1, window.devicePixelRatio||1)
+  const w = canvas.offsetWidth, h = 48
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0,0,0,h)
+  grad.addColorStop(0,'rgba(232,168,56,0.3)')
+  grad.addColorStop(1,'rgba(232,168,56,0)')
+
+  const pts = vals.map((v,i) => [i/(vals.length-1||1)*w, h - (v/max)*(h-8) - 4])
+
+  ctx.beginPath()
+  ctx.moveTo(0, h)
+  pts.forEach(([x,y]) => ctx.lineTo(x,y))
+  ctx.lineTo(w, h)
+  ctx.fillStyle = grad
+  ctx.fill()
+
+  ctx.beginPath()
+  pts.forEach(([x,y],i) => i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y))
+  ctx.strokeStyle = '#e8a838'
+  ctx.lineWidth = 1.5
+  ctx.lineJoin = 'round'
+  ctx.stroke()
+
+  // Hour labels every 6h
+  ctx.fillStyle = 'rgba(139,148,158,0.8)'
+  ctx.font = '9px system-ui'
+  ctx.textAlign = 'center'
+  labels.forEach((l,i) => {
+    if(i % 6 === 0) ctx.fillText(l, pts[i][0], h-1)
+  })
+}
+
+// ── TOP STATS ─────────────────────────────────────────────────
+function drawTopStats(totals, scorecards) {
+  const active = scorecards.filter(c=>c.is_active).length
+  const items = [
+    ['Campaigns', totals.campaigns, ''],
+    ['Active', active, 'success'],
+    ['Members', totals.members, ''],
+    ['Events', totals.events, ''],
+    ['Bulletins', totals.bulletins, ''],
+    ['WA sent', totals.wa_sent, ''],
+    ['Documents', totals.docs, ''],
+  ]
+  document.getElementById('top-stats').innerHTML = items.map(([l,n,cls])=>`
+    <div class="stat-card ${cls}">
+      <div class="stat-num">${n}</div>
+      <div class="stat-label">${l}</div>
+    </div>`).join('')
+}
+
+// ── SCORECARD WALL ────────────────────────────────────────────
+function drawScorecards(cards) {
+  const gradeColor = {A:'#4ade80',B:'#22c55e',C:'#e8a838',D:'#f97316',F:'#f87171'}
+  const gradeGlow  = {A:'rgba(74,222,128,.15)',B:'rgba(34,197,94,.12)',C:'rgba(232,168,56,.12)',D:'rgba(249,115,22,.12)',F:'rgba(248,113,113,.12)'}
+
+  document.getElementById('scorecard-wall').innerHTML = cards.map(c => {
+    const gc = gradeColor[c.grade] || '#8b949e'
+    const gg = gradeGlow[c.grade] || 'transparent'
+    const taskPct = c.tasks > 0 ? Math.round(c.tasks_done/c.tasks*100) : 0
+    const subDays = c.days_to_expiry != null ? c.days_to_expiry : null
+    const subWarning = subDays != null && subDays <= 7
+
+    const dot = s => `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:2px;background:${s}"></span>`
+
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-top:3px solid ${c.primary};border-radius:10px;padding:18px;position:relative;overflow:hidden">
+      <!-- Grade badge -->
+      <div style="position:absolute;top:14px;right:16px;font-size:36px;font-weight:700;color:${gc};opacity:.15;line-height:1;font-family:serif">${c.grade}</div>
+      <div style="position:absolute;top:14px;right:16px">
+        <span style="font-size:20px;font-weight:700;color:${gc};font-family:serif">${c.grade}</span>
+      </div>
+
+      <!-- Header -->
+      <div style="font-size:13px;font-weight:600;margin-bottom:2px;padding-right:40px">${c.name}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:12px">${c.party} · ${c.seat} · ${c.county}</div>
+
+      <!-- Health bar -->
+      <div style="height:4px;background:var(--bg3);border-radius:2px;margin-bottom:12px;overflow:hidden">
+        <div style="height:100%;width:${c.score}%;background:${gc};border-radius:2px;transition:width .5s"></div>
+      </div>
+
+      <!-- Stats row -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+        ${[['👥',c.members,'members'],['📅',c.events,'events'],['📢',c.bulletins,'bulletins']].map(([icon,val,label])=>`
+        <div style="background:var(--bg3);border-radius:6px;padding:8px;text-align:center">
+          <div style="font-size:16px;font-weight:700">${val}</div>
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:1px">${label}</div>
+        </div>`).join('')}
+      </div>
+
+      <!-- Signal dots -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        <span style="font-size:10px;background:var(--bg3);padding:3px 8px;border-radius:20px;color:var(--muted)">
+          ${dot(c.days_silent<2?'#4ade80':c.days_silent<7?'#e8a838':'#f87171')}
+          ${c.days_silent < 999 ? c.days_silent+'d ago' : 'never logged in'}
+        </span>
+        <span style="font-size:10px;background:var(--bg3);padding:3px 8px;border-radius:20px;color:var(--muted)">
+          ${dot('#3b82f6')} ${c.recent_logs} actions/7d
+        </span>
+        ${c.tasks > 0 ? `<span style="font-size:10px;background:var(--bg3);padding:3px 8px;border-radius:20px;color:var(--muted)">
+          ${dot(taskPct>50?'#4ade80':'#f97316')} ${taskPct}% tasks done
+        </span>` : ''}
+      </div>
+
+      <!-- Sub status -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border)">
+        <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:20px;
+          background:${c.sub_status==='active'?'rgba(34,197,94,.1)':c.sub_status==='trial'?'rgba(232,168,56,.1)':'rgba(239,68,68,.1)'};
+          color:${c.sub_status==='active'?'#4ade80':c.sub_status==='trial'?'#e8a838':'#f87171'}">
+          ${c.sub_status} · ${c.sub_tier}
+        </span>
+        ${subDays!=null ? `<span style="font-size:10px;color:${subWarning?'#f87171':'var(--muted)'}">
+          ${subWarning?'⚠ ':''}${subDays}d left
+        </span>` : ''}
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ── GANTT ─────────────────────────────────────────────────────
+function drawGantt(gantt) {
+  if(!gantt.length){ document.getElementById('gantt-wrap').innerHTML='<div class="empty">No subscriptions</div>'; return }
+  const now = new Date()
+  const minD = new Date(Math.min(...gantt.map(g=>new Date(g.created))))
+  const maxD = new Date(Math.max(...gantt.map(g=>new Date(g.trial_ends||g.next_due||now))))
+  const span = maxD - minD || 1
+
+  const statusColor = {trial:'#e8a838',active:'#4ade80',overdue:'#f87171',cancelled:'#8b949e',none:'#4a5d72'}
+
+  document.getElementById('gantt-wrap').innerHTML = gantt.map(g => {
+    const start = new Date(g.created)
+    const end   = new Date(g.trial_ends || g.next_due || now)
+    const left  = ((start - minD)/span*100).toFixed(1)
+    const width = ((end - start)/span*100).toFixed(1)
+    const nowPct= ((now - minD)/span*100).toFixed(1)
+    const color = statusColor[g.status] || '#4a5d72'
+    const daysLeft = g.trial_ends ? Math.round((new Date(g.trial_ends)-now)/(1000*60*60*24)) : null
+
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+        <span style="font-weight:600">${g.name}</span>
+        <span style="color:var(--muted)">${g.status}${daysLeft!=null?' · '+daysLeft+'d':''}</span>
+      </div>
+      <div style="position:relative;height:20px;background:var(--bg3);border-radius:10px;overflow:hidden">
+        <div style="position:absolute;left:${left}%;width:${width}%;height:100%;background:${color};opacity:.7;border-radius:10px"></div>
+        <div style="position:absolute;left:${nowPct}%;top:0;bottom:0;width:2px;background:#fff;opacity:.5"></div>
+      </div>
+    </div>`
+  }).join('')
+}
+
+// ── PYRAMID ───────────────────────────────────────────────────
+function drawPyramid(seats) {
+  const canvas = document.getElementById('pyramid-canvas')
+  canvas.width = canvas.offsetWidth * (window.devicePixelRatio||1) || 400
+  const dpr = window.devicePixelRatio||1
+  const W = canvas.offsetWidth, H = 200
+  canvas.height = H * dpr
+  const ctx = canvas.getContext('2d')
+  ctx.scale(dpr, dpr)
+
+  const levels = SEAT_ORDER.map((s,i) => ({seat:s, count:seats[s]||0, color:SEAT_COLORS[i]}))
+  const totalLevels = levels.length
+  const levelH = (H - 20) / totalLevels
+
+  levels.forEach((lv, i) => {
+    const pct = (i+1) / totalLevels
+    const maxW = W * 0.85
+    const w = maxW * pct
+    const x = (W - w) / 2
+    const y = i * levelH + 10
+
+    ctx.fillStyle = lv.color
+    ctx.globalAlpha = lv.count > 0 ? 0.85 : 0.2
+    ctx.beginPath()
+    ctx.roundRect(x, y, w, levelH-2, 3)
+    ctx.fill()
+
+    ctx.globalAlpha = 1
+    ctx.fillStyle = lv.count > 0 ? '#fff' : 'rgba(255,255,255,0.3)'
+    ctx.font = `${lv.count>0?'500':'400'} 11px system-ui`
+    ctx.textAlign = 'center'
+    ctx.fillText(`${lv.seat} ${lv.count>0?'· '+lv.count:'· none'}`, W/2, y + levelH/2 + 4)
+  })
+
+  const legend = document.getElementById('seat-legend')
+  legend.innerHTML = levels.filter(l=>l.count>0).map(l=>`
+    <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;margin-right:10px;color:var(--muted)">
+      <span style="width:10px;height:10px;border-radius:2px;background:${l.color};display:inline-block"></span>
+      ${l.seat}: ${l.count}
+    </span>`).join('')
+}
+
+// ── HEATMAP ───────────────────────────────────────────────────
+function drawHeatmap(heatmap) {
+  const now = new Date()
+  const days = []
+  for(let i=59; i>=0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate()-i)
+    days.push(d.toISOString().split('T')[0])
+  }
+  const max = Math.max(...Object.values(heatmap), 1)
+
+  const weeks = []
+  let week = []
+  days.forEach((d,i) => {
+    week.push(d)
+    if(week.length===7 || i===days.length-1) { weeks.push([...week]); week=[] }
+  })
+
+  const cellSize = 16, gap = 3
+  let html = `<div style="display:flex;gap:${gap}px;padding:4px 0">`
+  weeks.forEach(week => {
+    html += `<div style="display:flex;flex-direction:column;gap:${gap}px">`
+    week.forEach(day => {
+      const count = heatmap[day] || 0
+      const intensity = count/max
+      const bg = count === 0
+        ? 'var(--bg3)'
+        : `rgba(232,168,56,${0.15 + intensity*0.85})`
+      html += `<div title="${day}: ${count} actions" style="width:${cellSize}px;height:${cellSize}px;border-radius:3px;background:${bg};cursor:default"></div>`
+    })
+    html += '</div>'
+  })
+  html += '</div>'
+
+  // Legend
+  html += `<div style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;color:var(--muted)">
+    <span>Less</span>
+    ${[0,0.2,0.4,0.7,1].map(i=>`<div style="width:12px;height:12px;border-radius:2px;background:${i===0?'var(--bg3)':`rgba(232,168,56,${0.15+i*0.85})`}"></div>`).join('')}
+    <span>More</span>
+  </div>`
+
+  document.getElementById('heatmap-wrap').innerHTML = html
+}
+
+// ── KENYA MAP ─────────────────────────────────────────────────
+function drawKenyaMap(scorecards, countyData) {
+  const map = L.map('kenya-map', {zoomControl:true, scrollWheelZoom:false})
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'© OpenStreetMap © CARTO', maxZoom:18
+  }).addTo(map)
+  map.setView([0.0236, 37.9062], 6)
+
+  // Load constituencies and color by campaign density
+  fetch('/static/geo/constituencies.geojson')
+    .then(r=>r.json())
+    .then(geo=>{
+      // Build county lookup from our data
+      const countyCodes = {}
+      Object.keys(countyData).forEach(county => {
+        countyCodes[county] = countyData[county]
+      })
+
+      L.geoJSON(geo, {
+        style: f => {
+          const county = (f.properties.COUNTY_NAM||'').toUpperCase()
+          const data = countyCodes[county]
+          const count = data ? data.campaigns.length : 0
+          return {
+            fillColor: count > 3 ? '#e8a838' : count > 1 ? '#f97316' : count === 1 ? '#3b82f6' : '#1e2a3a',
+            fillOpacity: count > 0 ? 0.55 : 0.1,
+            color: count > 0 ? '#e8a838' : '#2d3d50',
+            weight: count > 0 ? 1.5 : 0.5,
+            opacity: 0.8
+          }
+        },
+        onEachFeature: (f, lyr) => {
+          const county = (f.properties.COUNTY_NAM||'').toUpperCase()
+          const data = countyData[county]
+          if(data) {
+            const campList = data.campaigns.map(c=>
+              `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #333">
+                <div style="width:8px;height:8px;border-radius:50%;background:${c.primary};flex-shrink:0"></div>
+                <div>
+                  <div style="font-size:11px;font-weight:600">${c.name}</div>
+                  <div style="font-size:10px;color:#888">${c.party} · ${c.seat}</div>
+                </div>
+              </div>`
+            ).join('')
+            lyr.bindPopup(`
+              <div style="font-family:-apple-system,sans-serif;min-width:200px">
+                <div style="font-weight:700;font-size:13px;margin-bottom:8px;color:#fff">${f.properties.COUNTY_NAM} County</div>
+                <div style="font-size:10px;color:#888;margin-bottom:8px">${data.campaigns.length} campaign${data.campaigns.length!==1?'s':''} on platform</div>
+                ${campList}
+              </div>
+            `)
+            lyr.on('mouseover', function(){ this.setStyle({fillOpacity:0.8,weight:2}) })
+            lyr.on('mouseout',  function(){ this.setStyle({fillOpacity:0.55,weight:1.5}) })
+          }
+        }
+      }).addTo(map)
+    })
+
+  // Plot candidate bubbles using geocoded constituency locations
+  scorecards.forEach(c => {
+    if(!c.constituency_code) return
+    // We'll use a nominatim lookup per campaign
+    const query = encodeURIComponent((c.ward||c.constituency||c.county)+', Kenya')
+    fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+      {headers:{'Accept-Language':'en'}})
+      .then(r=>r.json())
+      .then(res=>{
+        if(!res||!res[0]) return
+        const lat = parseFloat(res[0].lat)
+        const lng = parseFloat(res[0].lon)
+        const r = Math.max(8, Math.min(28, 8 + c.members*4))
+
+        const circle = L.circleMarker([lat,lng], {
+          radius: r,
+          fillColor: c.primary,
+          color: '#fff',
+          weight: 1.5,
+          fillOpacity: 0.85
+        }).addTo(map)
+
+        const gradeColor = {A:'#4ade80',B:'#22c55e',C:'#e8a838',D:'#f97316',F:'#f87171'}
+
+        circle.bindPopup(`
+          <div style="font-family:-apple-system,sans-serif;min-width:190px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <div style="width:12px;height:12px;border-radius:50%;background:${c.primary}"></div>
+              <div style="font-weight:700;font-size:13px">${c.name}</div>
+            </div>
+            <div style="font-size:11px;color:#888;margin-bottom:8px">${c.party} · ${c.seat} · ${c.constituency}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+              <div style="background:#1c2128;border-radius:5px;padding:6px;text-align:center">
+                <div style="font-size:14px;font-weight:700">${c.members}</div>
+                <div style="font-size:9px;color:#888">supporters</div>
+              </div>
+              <div style="background:#1c2128;border-radius:5px;padding:6px;text-align:center">
+                <div style="font-size:14px;font-weight:700;color:${gradeColor[c.grade]}">${c.grade}</div>
+                <div style="font-size:9px;color:#888">health</div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:${c.sub_status==='active'?'#4ade80':'#e8a838'};font-weight:600;text-transform:uppercase">
+              ${c.sub_status} · ${c.sub_tier}
+            </div>
+          </div>
+        `)
+      }).catch(()=>{})
+  })
+
+  // Competition legend
+  const legend = L.control({position:'bottomright'})
+  legend.onAdd = () => {
+    const div = L.DomUtil.create('div')
+    div.style.cssText = 'background:rgba(13,17,23,0.9);border:1px solid #2d3d50;border-radius:8px;padding:10px 12px;font-family:system-ui;font-size:11px;color:#e6edf3'
+    div.innerHTML = `
+      <div style="font-weight:600;margin-bottom:8px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#8b949e">Campaign density</div>
+      ${[['#3b82f6','1 campaign'],['#f97316','2–3 campaigns'],['#e8a838','4+ campaigns'],['#1e2a3a','None']].map(([c,l])=>
+        `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <div style="width:12px;height:12px;border-radius:2px;background:${c}"></div>${l}
+        </div>`).join('')}
+    `
+    return div
+  }
+  legend.addTo(map)
+}
+
+// ── PARTY BREAKDOWN ───────────────────────────────────────────
+function drawParties(parties, scorecards) {
+  const total = Object.values(parties).reduce((a,b)=>a+b,0)||1
+  document.getElementById('party-wrap').innerHTML = Object.entries(parties).map(([party, count]) => {
+    const color = PARTY_COLORS[party] || '#8b949e'
+    const pct = Math.round(count/total*100)
+    const camps = scorecards.filter(c=>c.party===party)
+    return `<div style="background:var(--bg3);border:1px solid var(--border);border-left:3px solid ${color};border-radius:8px;padding:12px 16px;min-width:160px">
+      <div style="font-size:18px;font-weight:700;color:${color}">${count}</div>
+      <div style="font-size:12px;font-weight:600;margin:2px 0">${party}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px">${pct}% of platform</div>
+      <div style="height:3px;background:var(--bg2);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:2px"></div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--muted)">${camps.map(c=>c.seat+' · '+c.constituency).join('<br>')}</div>
+    </div>`
+  }).join('')
+}
+
+window.addEventListener('resize', ()=>{
+  // Re-fetch and redraw on resize
+})
+</script>
+{% endblock %}

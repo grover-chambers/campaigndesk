@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign created! — CampaignDesk</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0f1a;color:#e2e8f0;}
+        .container{max-width:600px;margin:0 auto;padding:0 24px;}
+        
+        .header{background:#0a0f1a;border-bottom:1px solid #1f2937;padding:20px 0;margin-bottom:40px;}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none;justify-content:center;}
+        .logo-icon{width:32px;height:32px;background:#eab308;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+        .logo-icon svg{width:18px;height:18px;fill:#0a0f1a;}
+        .logo-text{font-size:20px;font-weight:800;color:white;}
+        .logo-text span{color:#eab308;}
+        
+        .success-card{background:#111827;border:1px solid #1f2937;border-radius:24px;padding:48px;text-align:center;margin:40px 0;}
+        .checkmark{width:80px;height:80px;background:#10b981;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:48px;}
+        
+        .credentials{background:#0a0f1a;border:1px solid #1f2937;border-radius:16px;padding:24px;margin:32px 0;text-align:left;}
+        .cred-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #1f2937;}
+        .cred-row:last-child{border-bottom:none;}
+        .cred-label{font-weight:600;color:#94a3b8;}
+        .cred-value{font-family:monospace;font-size:16px;font-weight:700;color:#eab308;}
+        
+        .btn-primary{background:#eab308;color:#0a0f1a;padding:14px 32px;border-radius:40px;text-decoration:none;font-weight:700;display:inline-block;margin-top:16px;}
+        .btn-outline{border:1px solid #1f2937;color:#94a3b8;padding:12px 24px;border-radius:40px;text-decoration:none;margin-left:12px;display:inline-block;}
+        .warning{background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:16px;padding:20px;margin-top:24px;font-size:13px;color:#94a3b8;}
+        
+        footer{border-top:1px solid #1f2937;padding:32px 0;text-align:center;color:#64748b;font-size:13px;margin-top:40px;}
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon"><svg viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="5" rx="1.5"/><rect x="8" y="1" width="5" height="5" rx="1.5"/><rect x="1" y="8" width="5" height="5" rx="1.5"/><rect x="8" y="8" width="5" height="5" rx="1.5"/></svg></div>
+            <div class="logo-text">Campaign<span>Desk</span></div>
+        </a>
+    </div>
+</header>
+
+<div class="container">
+    <div class="success-card">
+        <div class="checkmark">🎉</div>
+        <h2>Campaign created successfully!</h2>
+        <p style="color:#94a3b8; margin-top:12px;">{{ campaign.candidate }}'s campaign is now live</p>
+        
+        <div class="credentials">
+            <div class="cred-row">
+                <span class="cred-label">Secretary login phone</span>
+                <span class="cred-value">{{ campaign.phone }}</span>
+            </div>
+            <div class="cred-row">
+                <span class="cred-label">Access code</span>
+                <span class="cred-value">{{ campaign.access_code }}</span>
+            </div>
+            <div class="cred-row">
+                <span class="cred-label">Campaign noticeboard</span>
+                <span class="cred-value"><a href="/c/{{ campaign.slug }}/hub" style="color:#eab308; text-decoration:none;">View noticeboard →</a></span>
+            </div>
+        </div>
+        
+        <a href="/c/{{ campaign.slug }}/hub" class="btn-primary">Go to campaign dashboard →</a>
+        <a href="/" class="btn-outline">Back to home</a>
+        
+        <div class="warning">
+            <strong>📱 Save these credentials</strong><br>
+            You'll need the access code to log in to your dashboard. Share this code only with your campaign team.
+        </div>
+    </div>
+</div>
+
+<footer>
+    <div class="container">
+        <p>© 2025 CampaignDesk — Built for Kenyan campaigns</p>
+    </div>
+</footer>
+</body>
+</html>

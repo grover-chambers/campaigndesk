@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign details — CampaignDesk</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0f1a;color:#e2e8f0;}
+        .container{max-width:800px;margin:0 auto;padding:0 24px;}
+        
+        .header{background:#0a0f1a;border-bottom:1px solid #1f2937;padding:20px 0;margin-bottom:40px;}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+        .logo-icon{width:32px;height:32px;background:#eab308;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+        .logo-icon svg{width:18px;height:18px;fill:#0a0f1a;}
+        .logo-text{font-size:20px;font-weight:800;color:white;}
+        .logo-text span{color:#eab308;}
+        
+        .progress{margin-bottom:40px;}
+        .progress-steps{display:flex;gap:16px;justify-content:center;}
+        .step{width:40px;height:40px;border-radius:50%;background:#1f2937;display:flex;align-items:center;justify-content:center;font-weight:700;color:#64748b;}
+        .step.active{background:#eab308;color:#0a0f1a;}
+        .step.completed{background:#10b981;color:white;}
+        
+        .form-card{background:#111827;border:1px solid #1f2937;border-radius:24px;padding:40px;margin-bottom:40px;}
+        .form-card h2{font-size:28px;margin-bottom:8px;}
+        .form-card p{color:#94a3b8;margin-bottom:32px;}
+        
+        .form-group{margin-bottom:24px;}
+        .form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:#cbd5e1;}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px;background:#0a0f1a;border:1px solid #1f2937;border-radius:12px;color:white;font-size:14px;font-family:inherit;}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#eab308;}
+        .form-group textarea{min-height:80px;resize:vertical;}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+        
+        .btn-back{background:transparent;border:1px solid #1f2937;color:#94a3b8;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;}
+        .btn-submit{background:#eab308;color:#0a0f1a;border:none;padding:12px 32px;border-radius:40px;font-weight:700;font-size:14px;cursor:pointer;}
+        .form-buttons{display:flex;gap:16px;justify-content:flex-end;margin-top:32px;}
+        
+        .error-message{background:rgba(239,68,68,0.1);border:1px solid #ef4444;border-radius:12px;padding:12px;margin-bottom:20px;color:#ef4444;font-size:13px;display:none;}
+        
+        footer{border-top:1px solid #1f2937;padding:32px 0;text-align:center;color:#64748b;font-size:13px;margin-top:40px;}
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon"><svg viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="5" rx="1.5"/><rect x="8" y="1" width="5" height="5" rx="1.5"/><rect x="1" y="8" width="5" height="5" rx="1.5"/><rect x="8" y="8" width="5" height="5" rx="1.5"/></svg></div>
+            <div class="logo-text">Campaign<span>Desk</span></div>
+        </a>
+    </div>
+</header>
+
+<div class="container">
+    <div class="progress">
+        <div class="progress-steps">
+            <div class="step completed">1</div>
+            <div class="step active">2</div>
+            <div class="step">3</div>
+        </div>
+    </div>
+    
+    <div class="form-card">
+        <h2>Campaign details</h2>
+        <p>Tell us about the candidate and the campaign</p>
+        
+        <div id="errorMsg" class="error-message"></div>
+        
+        <form method="POST" action="/auth/signup/campaign" id="campaignForm">
+            <input type="hidden" name="seat_level" value="{{ seat }}">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Candidate's full name *</label>
+                    <input type="text" name="candidate_name" required placeholder="e.g., Hon. Julius Were">
+                </div>
+                <div class="form-group">
+                    <label>Political party</label>
+                    <select name="party" required>
+                        <option value="">Select party</option>
+                        <option value="ODM">ODM</option>
+                        <option value="UDA">UDA</option>
+                        <option value="Jubilee">Jubilee</option>
+                        <option value="ANC">ANC</option>
+                        <option value="Wiper">Wiper</option>
+                        <option value="KANU">KANU</option>
+                        <option value="Independent">Independent</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Constituency / Ward</label>
+                    <input type="text" name="constituency" required placeholder="e.g., Kasarani Constituency">
+                </div>
+                <div class="form-group">
+                    <label>County</label>
+                    <input type="text" name="county" required placeholder="e.g., Nairobi">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Campaign slogan (optional)</label>
+                <input type="text" name="slogan" placeholder="e.g., Better leadership for a better future">
+            </div>
+            
+            <div class="form-group">
+                <label>Candidate bio (optional — shown on noticeboard)</label>
+                <textarea name="bio" placeholder="A short bio about the candidate..."></textarea>
+            </div>
+            
+            <div style="margin:32px 0 16px; border-top:1px solid #1f2937; padding-top:24px;">
+                <h3 style="font-size:18px; margin-bottom:16px;">Campaign manager / Secretary</h3>
+                <p style="color:#94a3b8; font-size:13px; margin-bottom:24px;">This person will have full access to manage the campaign</p>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Full name *</label>
+                    <input type="text" name="manager_name" required placeholder="e.g., Jane Akinyi">
+                </div>
+                <div class="form-group">
+                    <label>Phone number *</label>
+                    <input type="tel" name="manager_phone" required placeholder="0712345678">
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="button" class="btn-back" onclick="history.back()">Back</button>
+                <button type="submit" class="btn-submit">Create campaign →</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<footer>
+    <div class="container">
+        <p>© 2025 CampaignDesk — Built for Kenyan campaigns</p>
+    </div>
+</footer>
+
+<script>
+    document.getElementById('campaignForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const errorDiv = document.getElementById('errorMsg');
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+        
+        const formData = new FormData(e.target);
+        
+        try {
+            const response = await fetch('/auth/signup/campaign', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.redirected) {
+                window.location.href = response.url;
+            } else if (!response.ok) {
+                const data = await response.json();
+                errorDiv.textContent = data.error || 'Error creating campaign. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        } catch (err) {
+            errorDiv.textContent = 'Network error. Please check your connection.';
+            errorDiv.style.display = 'block';
+            console.error('Error:', err);
+        }
+    });
+</script>
+</body>
+</html>

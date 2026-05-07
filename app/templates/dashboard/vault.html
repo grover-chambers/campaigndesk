@@ -1,0 +1,297 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Document Vault{% endblock %}
+{% block content %}
+
+<div style="display:flex;gap:10px;margin-bottom:20px">
+  <button class="btn btn-primary" onclick="openTab('docs');openModal('upload-doc')">📄 Upload document</button>
+  <button class="btn btn-secondary" onclick="openTab('gallery');openModal('upload-photo')">📸 Upload photo</button>
+</div>
+
+<!-- Tabs -->
+<div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px">
+  <button id="tab-docs" onclick="openTab('docs')"
+    style="padding:10px 20px;background:none;border:none;border-bottom:2px solid var(--primary);color:var(--text);font-size:13px;font-weight:600;cursor:pointer">
+    📄 Documents
+  </button>
+  <button id="tab-gallery" onclick="openTab('gallery')"
+    style="padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-size:13px;cursor:pointer">
+    📸 Gallery
+  </button>
+</div>
+
+<!-- Documents tab -->
+<div id="pane-docs">
+  {% if docs %}
+  <div class="card" style="padding:0">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Title</th><th>Type</th><th>Event</th><th>Visibility</th><th>Uploaded</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for d in docs %}
+        <tr>
+          <td>
+            <a href="{{ d.cloudinary_url }}" target="_blank"
+               style="font-weight:600;font-size:13px;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:6px">
+              {% if d.doc_type == 'minutes' %}📋{% elif d.doc_type == 'manifesto' %}📜{% else %}📄{% endif %}
+              {{ d.title }}
+            </a>
+            {% if d.caption %}<div style="font-size:11px;color:var(--muted);margin-top:2px">{{ d.caption }}</div>{% endif %}
+          </td>
+          <td><span class="badge badge-internal">{{ d.doc_type|title }}</span></td>
+          <td style="font-size:12px;color:var(--muted)">{{ d.event.title if d.event else '—' }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('dashboard.vault_toggle_public', did=d.id) }}" style="display:inline">
+              <button type="submit" class="badge {{ 'badge-public' if d.is_public else 'badge-internal' }}"
+                style="border:none;cursor:pointer;background:none;padding:3px 9px">
+                {{ '🌐 Public' if d.is_public else '🔒 Internal' }}
+              </button>
+            </form>
+          </td>
+          <td style="font-size:12px;color:var(--muted)">{{ d.created_at.strftime('%d %b %Y') }}</td>
+          <td style="white-space:nowrap">
+            <a href="{{ d.cloudinary_url }}" target="_blank" class="btn btn-sm btn-ghost">↗ Open</a>
+            <form method="POST" action="{{ url_for('dashboard.vault_delete', did=d.id) }}"
+                  style="display:inline;margin-left:4px"
+                  onsubmit="return confirm('Delete this document?')">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty">
+      <div class="empty-icon">📄</div>
+      No documents yet. Upload meeting minutes, manifestos, or reports above.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Gallery tab -->
+<div id="pane-gallery" style="display:none">
+  {% if gallery %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">
+    {% for g in gallery %}
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <a href="{{ g.cloudinary_url }}" target="_blank">
+        <img src="{{ g.thumbnail_url or g.cloudinary_url }}"
+             style="width:100%;height:140px;object-fit:cover;display:block">
+      </a>
+      <div style="padding:10px 12px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:4px">{{ g.title }}</div>
+        {% if g.caption %}<div style="font-size:11px;color:var(--muted);margin-bottom:6px">{{ g.caption }}</div>{% endif %}
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <form method="POST" action="{{ url_for('dashboard.vault_toggle_public', did=g.id) }}" style="display:inline">
+            <button type="submit" class="badge {{ 'badge-public' if g.is_public else 'badge-internal' }}"
+              style="border:none;cursor:pointer;background:none;padding:2px 7px;font-size:10px">
+              {{ '🌐 Public' if g.is_public else '🔒 Internal' }}
+            </button>
+          </form>
+          <form method="POST" action="{{ url_for('dashboard.vault_delete', did=g.id) }}"
+                onsubmit="return confirm('Delete this photo?')">
+            <button type="submit" class="btn btn-sm btn-danger">✕</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="empty">
+      <div class="empty-icon">📸</div>
+      No photos yet. Upload campaign photos above.
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block modals %}
+
+<!-- Upload document modal -->
+<div class="modal-backdrop" id="modal-upload-doc">
+  <div class="modal">
+    <div class="modal-title">📄 Upload document</div>
+    <div class="form-group">
+      <label class="form-label">Select file (PDF, DOCX, etc.)</label>
+      <input type="file" id="doc-file" accept=".pdf,.doc,.docx,.txt,.xlsx"
+        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text)">
+      <div id="doc-upload-status" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+    </div>
+    <form id="doc-form" method="POST" action="{{ url_for('dashboard.vault_save') }}">
+      <input type="hidden" name="doc_type" id="doc-type-field" value="document">
+      <input type="hidden" name="cloudinary_url" id="doc-url-field">
+      <input type="hidden" name="cloudinary_id" id="doc-id-field">
+      <input type="hidden" name="thumbnail_url" id="doc-thumb-field">
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" name="title" required placeholder="e.g. Kayole Baraza Minutes — April 2025">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Document type</label>
+          <select name="doc_type" onchange="document.getElementById('doc-type-field').value=this.value">
+            <option value="document">Document</option>
+            <option value="minutes">Meeting minutes</option>
+            <option value="manifesto">Manifesto</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Linked event (optional)</label>
+          <select name="event_id">
+            <option value="">None</option>
+            {% for e in events_list %}
+            <option value="{{ e.id }}">{{ e.title }} — {{ e.event_date.strftime('%d %b %Y') }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Caption / notes</label>
+        <input type="text" name="caption" placeholder="Optional short description">
+      </div>
+      <div class="form-check">
+        <input type="checkbox" name="is_public" id="doc-public">
+        <label for="doc-public">Make public (shows on campaign login page)</label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('upload-doc')">Cancel</button>
+        <button type="submit" id="doc-submit-btn" class="btn btn-primary" disabled>Upload & save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Upload photo modal -->
+<div class="modal-backdrop" id="modal-upload-photo">
+  <div class="modal">
+    <div class="modal-title">📸 Upload photo</div>
+    <div class="form-group">
+      <label class="form-label">Select image (JPG, PNG, WEBP)</label>
+      <input type="file" id="photo-file" accept="image/*"
+        style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text)">
+      <div id="photo-upload-status" style="font-size:12px;color:var(--muted);margin-top:6px"></div>
+      <div id="photo-preview" style="margin-top:10px;display:none">
+        <img id="photo-preview-img" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid var(--border)">
+      </div>
+    </div>
+    <form id="photo-form" method="POST" action="{{ url_for('dashboard.vault_save') }}">
+      <input type="hidden" name="doc_type" value="gallery">
+      <input type="hidden" name="cloudinary_url" id="photo-url-field">
+      <input type="hidden" name="cloudinary_id" id="photo-id-field">
+      <input type="hidden" name="thumbnail_url" id="photo-thumb-field">
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" name="title" required placeholder="e.g. Kayole Ward Baraza — April 2025">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Caption</label>
+        <input type="text" name="caption" placeholder="Short description of the photo">
+      </div>
+      <div class="form-check">
+        <input type="checkbox" name="is_public" id="photo-public" checked>
+        <label for="photo-public">Show in public gallery (login page)</label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('upload-photo')">Cancel</button>
+        <button type="submit" id="photo-submit-btn" class="btn btn-primary" disabled>Upload & save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const CLOUD_NAME    = '{{ cloud_name }}'
+const UPLOAD_PRESET = '{{ upload_preset }}'
+
+function openModal(id){document.getElementById('modal-'+id).classList.add('open')}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open')}
+document.querySelectorAll('.modal-backdrop').forEach(el=>
+  el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}))
+
+function openTab(tab){
+  document.getElementById('pane-docs').style.display   = tab==='docs'    ? 'block' : 'none'
+  document.getElementById('pane-gallery').style.display = tab==='gallery' ? 'block' : 'none'
+  document.getElementById('tab-docs').style.borderBottomColor    = tab==='docs'    ? 'var(--primary)' : 'transparent'
+  document.getElementById('tab-gallery').style.borderBottomColor = tab==='gallery' ? 'var(--primary)' : 'transparent'
+  document.getElementById('tab-docs').style.color    = tab==='docs'    ? 'var(--text)' : 'var(--muted)'
+  document.getElementById('tab-gallery').style.color = tab==='gallery' ? 'var(--text)' : 'var(--muted)'
+}
+
+async function uploadToCloudinary(file, resourceType){
+  const fd = new FormData()
+  fd.append('file', file)
+  fd.append('upload_preset', UPLOAD_PRESET)
+  fd.append('folder', 'campaigndesk/{{ campaign.slug }}')
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`
+  const res = await fetch(url, {method:'POST', body:fd})
+  if(!res.ok) throw new Error(`Upload failed: ${res.status}`)
+  return await res.json()
+}
+
+// Document upload
+document.getElementById('doc-file').addEventListener('change', async function(){
+  const file = this.files[0]
+  if(!file) return
+  const status = document.getElementById('doc-upload-status')
+  const btn    = document.getElementById('doc-submit-btn')
+  status.textContent = '⏳ Uploading to Cloudinary…'
+  status.style.color = 'var(--muted)'
+  btn.disabled = true
+  try {
+    const data = await uploadToCloudinary(file, 'raw')
+    document.getElementById('doc-url-field').value   = data.secure_url
+    document.getElementById('doc-id-field').value    = data.public_id
+    document.getElementById('doc-thumb-field').value = data.secure_url
+    status.textContent = '✓ Upload complete — fill in details and save'
+    status.style.color = '#4ade80'
+    btn.disabled = false
+  } catch(e) {
+    status.textContent = '✗ Upload failed: ' + e.message
+    status.style.color = '#f87171'
+  }
+})
+
+// Photo upload
+document.getElementById('photo-file').addEventListener('change', async function(){
+  const file = this.files[0]
+  if(!file) return
+  const status = document.getElementById('photo-upload-status')
+  const btn    = document.getElementById('photo-submit-btn')
+  // Show local preview instantly
+  const reader = new FileReader()
+  reader.onload = e => {
+    document.getElementById('photo-preview-img').src = e.target.result
+    document.getElementById('photo-preview').style.display = 'block'
+  }
+  reader.readAsDataURL(file)
+  status.textContent = '⏳ Uploading to Cloudinary…'
+  status.style.color = 'var(--muted)'
+  btn.disabled = true
+  try {
+    const data = await uploadToCloudinary(file, 'image')
+    document.getElementById('photo-url-field').value   = data.secure_url
+    document.getElementById('photo-id-field').value    = data.public_id
+    // Thumbnail = auto-resized version
+    const thumb = data.secure_url.replace('/upload/', '/upload/w_400,h_300,c_fill/')
+    document.getElementById('photo-thumb-field').value = thumb
+    status.textContent = '✓ Upload complete — add a title and save'
+    status.style.color = '#4ade80'
+    btn.disabled = false
+    document.getElementById('photo-preview-img').src = thumb
+  } catch(e) {
+    status.textContent = '✗ Upload failed: ' + e.message
+    status.style.color = '#f87171'
+  }
+})
+</script>
+{% endblock %}

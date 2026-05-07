@@ -1,0 +1,124 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Events{% endblock %}
+{% block content %}
+
+<div class="actions-bar">
+  <button class="btn btn-primary" onclick="openModal('event')">📅 Schedule event</button>
+</div>
+
+<div class="card">
+  <div class="card-title">📅 Upcoming events</div>
+  {% if upcoming %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Event</th><th>Date & time</th><th>Location</th><th>Ward</th><th>Visibility</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for e in upcoming %}
+      <tr>
+        <td>
+          <div style="font-weight:600;font-size:13px">{{ e.title }}</div>
+          {% if e.description %}<div style="font-size:11px;color:var(--muted);margin-top:2px">{{ e.description[:60] }}{% if e.description|length > 60 %}…{% endif %}</div>{% endif %}
+        </td>
+        <td style="font-size:12px;color:var(--muted);white-space:nowrap">{{ e.event_date.strftime('%d %b %Y') }}<br>{{ e.event_date.strftime('%I:%M %p') }}</td>
+        <td style="font-size:12px;color:var(--muted)">{{ e.venue or e.location or '—' }}</td>
+        <td style="font-size:12px;color:var(--muted)">{{ e.ward or '—' }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('dashboard.toggle_event_public', eid=e.id) }}" style="display:inline">
+            <button type="submit" class="badge {{ 'badge-public' if e.is_public else 'badge-internal' }}" style="border:none;cursor:pointer;background:none;padding:3px 9px">
+              {{ '🌐 Public' if e.is_public else '🔒 Internal' }}
+            </button>
+          </form>
+        </td>
+        <td><span class="badge badge-{{ e.status }}">{{ e.status }}</span></td>
+        <td style="white-space:nowrap">
+          <form method="POST" action="{{ url_for('dashboard.complete_event', eid=e.id) }}" style="display:inline">
+            <button type="submit" class="btn btn-sm btn-secondary">✓ Done</button>
+          </form>
+          <form method="POST" action="{{ url_for('dashboard.cancel_event', eid=e.id) }}" style="display:inline;margin-left:4px" onsubmit="return confirm('Cancel this event?')">
+            <button type="submit" class="btn btn-sm btn-danger">✕</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty"><div class="empty-icon">📅</div>No upcoming events. Schedule one above.</div>
+  {% endif %}
+</div>
+
+{% if past %}
+<div class="card">
+  <div class="card-title">🕐 Past events</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Event</th><th>Date</th><th>Location</th><th>Status</th></tr></thead>
+      <tbody>
+      {% for e in past %}
+      <tr>
+        <td style="font-weight:600;font-size:13px">{{ e.title }}</td>
+        <td style="font-size:12px;color:var(--muted)">{{ e.event_date.strftime('%d %b %Y') }}</td>
+        <td style="font-size:12px;color:var(--muted)">{{ e.venue or e.location or '—' }}</td>
+        <td><span class="badge badge-{{ e.status }}">{{ e.status }}</span></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block modals %}
+<div class="modal-backdrop" id="modal-event">
+  <div class="modal">
+    <div class="modal-title">Schedule event</div>
+    <form method="POST" action="{{ url_for('dashboard.create_event') }}">
+      <div class="form-group">
+        <label class="form-label">Event title</label>
+        <input type="text" name="title" required placeholder="e.g. Community baraza — Kayole">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="2" placeholder="What is this event about?"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Date & time</label>
+          <input type="datetime-local" name="event_date" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ward</label>
+          <input type="text" name="ward" placeholder="e.g. Kayole">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Area / Neighbourhood</label>
+          <input type="text" name="location" placeholder="e.g. Kayole Phase 5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Venue name</label>
+          <input type="text" name="venue" placeholder="e.g. Kayole Social Hall">
+        </div>
+      </div>
+      <div class="form-check">
+        <input type="checkbox" name="is_public" id="ep" checked>
+        <label for="ep">Show on public noticeboard</label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('event')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Schedule event</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function openModal(id){document.getElementById('modal-'+id).classList.add('open')}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open')}
+document.querySelectorAll('.modal-backdrop').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}))
+</script>
+{% endblock %}

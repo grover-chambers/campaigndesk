@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ campaign.candidate }} — Campaign Noticeboard</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --primary: {{ campaign.colors.primary }};
+      --secondary: {{ campaign.colors.secondary }};
+      --bg:#131c27;--bg2:#1e2a3a;--bg3:#162030;
+      --border:#2d3d50;--text:#f0f4f8;--muted:#64748b;
+    }
+    body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+    .top-bar{background:var(--bg3);border-bottom:1px solid var(--border);padding:10px 32px;display:flex;align-items:center;justify-content:space-between}
+    .top-bar-left{display:flex;align-items:center;gap:10px}
+    .top-logo{display:flex;align-items:center;gap:7px;text-decoration:none}
+    .top-logomark{width:20px;height:20px;border-radius:5px;background:#e8a838;display:flex;align-items:center;justify-content:center}
+    .top-logomark svg{width:11px;height:11px;fill:#131c27}
+    .top-logo-name{color:var(--muted);font-size:12px;font-weight:600}
+    .top-sep{color:var(--border);font-size:14px}
+    .top-bar-label{color:var(--muted);font-size:12px}
+    .top-bar-right{display:flex;align-items:center;gap:12px}
+    .top-bar-right a{color:var(--muted);font-size:12px;text-decoration:none}
+    .login-btn{background:#e8a838;color:#131c27;border:none;border-radius:6px;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;text-decoration:none}
+    .party-bar{height:3px;background:linear-gradient(to right, var(--primary), var(--secondary))}
+    .hero{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;min-height:220px}
+    .hero-left{flex:1;padding:36px 32px;border-right:1px solid var(--border)}
+    .seat-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;border-radius:20px;margin-bottom:16px}
+    .seat-dot{width:5px;height:5px;border-radius:50%;background:var(--primary)}
+    .cand-name{color:#fff;font-size:32px;font-weight:700;line-height:1.1;margin-bottom:6px}
+    .constituency{color:var(--secondary);font-size:14px;font-weight:600;margin-bottom:10px}
+    .slogan{color:rgba(255,255,255,0.5);font-size:13px;font-style:italic;margin-bottom:16px}
+    .bio{color:rgba(255,255,255,0.5);font-size:13px;line-height:1.75;max-width:520px}
+    .hero-right{width:200px;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;gap:20px;border-left:1px solid var(--border)}
+    .stat-mini{text-align:center}
+    .stat-num{color:#fff;font-size:22px;font-weight:700}
+    .stat-label{color:var(--muted);font-size:11px;margin-top:3px}
+    .stat-divider{border:none;border-top:1px solid var(--border);margin:0}
+    .body-wrap{max-width:860px;margin:0 auto;padding:40px 32px}
+    .section-label{color:#e8a838;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+    .section-title{color:#fff;font-size:18px;font-weight:700;margin-bottom:20px}
+    .empty-state{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center;color:var(--muted);font-size:14px;margin-bottom:32px}
+    .bulletin-list{display:flex;flex-direction:column;gap:12px;margin-bottom:48px}
+    .bulletin-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;transition:border-color .15s}
+    .bulletin-card:hover{border-color:#4a5d72}
+    .bulletin-tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:20px;margin-bottom:10px}
+    .tag-update{background:rgba(232,168,56,0.1);border:1px solid rgba(232,168,56,0.25);color:#e8a838}
+    .tag-pledge{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#4ade80}
+    .tag-event{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);color:#38bdf8}
+    .bulletin-title{color:#fff;font-size:15px;font-weight:600;margin-bottom:6px}
+    .bulletin-body{color:var(--muted);font-size:13px;line-height:1.7}
+    .bulletin-date{color:#2d3d50;font-size:11px;margin-top:10px}
+    .events-list{display:flex;flex-direction:column;gap:10px;margin-bottom:48px}
+    .event-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:20px;transition:border-color .15s}
+    .event-card:hover{border-color:#4a5d72}
+    .event-date-block{width:48px;text-align:center;flex-shrink:0;border-right:1px solid var(--border);padding-right:18px}
+    .event-day{color:#e8a838;font-size:20px;font-weight:700;line-height:1}
+    .event-month{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+    .event-info h5{color:#fff;font-size:14px;font-weight:600;margin-bottom:3px}
+    .event-info p{color:var(--muted);font-size:12px}
+    .event-open{margin-left:auto;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);color:#38bdf8;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;flex-shrink:0}
+    footer{border-top:1px solid var(--border);padding:24px 32px;display:flex;align-items:center;justify-content:space-between;color:#2d3d50;font-size:12px}
+    @media(max-width:640px){.hero{flex-direction:column}.hero-right{width:100%;flex-direction:row;border-left:none;border-top:1px solid var(--border)}.body-wrap{padding:24px 16px}.cand-name{font-size:24px}}
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-left">
+    <a class="top-logo" href="/">
+      <div class="top-logomark"><svg viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="5" rx="1.5"/><rect x="8" y="1" width="5" height="5" rx="1.5"/><rect x="1" y="8" width="5" height="5" rx="1.5"/><rect x="8" y="8" width="5" height="5" rx="1.5"/></svg></div>
+      <span class="top-logo-name">CampaignDesk</span>
+    </a>
+    <span class="top-sep">·</span>
+    <span class="top-bar-label">Public noticeboard — {{ campaign.candidate }}</span>
+  </div>
+  <div class="top-bar-right">
+    <a href="/">Platform home</a>
+    <a href="/c/{{ campaign.slug }}/login" class="login-btn">Team login →</a>
+  </div>
+</div>
+
+<div class="party-bar"></div>
+
+<div class="hero">
+  <div class="hero-left">
+    <div class="seat-badge">
+      <span class="seat-dot"></span>
+      {{ campaign.party }} &nbsp;·&nbsp; {{ campaign.seat_level }}
+    </div>
+    <h1 class="cand-name">{{ campaign.candidate }}</h1>
+    <p class="constituency">{{ campaign.constituency }}</p>
+    {% if campaign.slogan %}<p class="slogan">"{{ campaign.slogan }}"</p>{% endif %}
+    {% if campaign.bio %}<p class="bio">{{ campaign.bio }}</p>{% endif %}
+  </div>
+  <div class="hero-right">
+    <div class="stat-mini">
+      <div class="stat-num">{{ member_count }}</div>
+      <div class="stat-label">Registered supporters</div>
+    </div>
+    <hr class="stat-divider">
+    <div class="stat-mini">
+      <div class="stat-num">{{ meeting_count }}</div>
+      <div class="stat-label">Meetings held</div>
+    </div>
+  </div>
+</div>
+
+<div class="body-wrap">
+
+  <p class="section-label">Latest updates</p>
+  <h2 class="section-title">Campaign bulletin</h2>
+
+  {% if bulletins %}
+    <div class="bulletin-list">
+      {% for b in bulletins %}
+      <div class="bulletin-card">
+        <span class="bulletin-tag tag-{{ b.tag }}">{{ b.tag|title }}</span>
+        <p class="bulletin-title">{{ b.title }}</p>
+        {% if b.body %}<p class="bulletin-body">{{ b.body }}</p>{% endif %}
+        <p class="bulletin-date">Posted {{ b.created_at.strftime('%d %b %Y') }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">No bulletins posted yet. Check back soon.</div>
+  {% endif %}
+
+  {% if upcoming %}
+  <p class="section-label">Upcoming events</p>
+  <h2 class="section-title">Open to the public</h2>
+  <div class="events-list">
+    {% for m in upcoming %}
+    <div class="event-card">
+      <div class="event-date-block">
+        <div class="event-day">{{ m.meeting_date.strftime('%d') }}</div>
+        <div class="event-month">{{ m.meeting_date.strftime('%b') }}</div>
+      </div>
+      <div class="event-info">
+        <h5>{{ m.title }}</h5>
+        <p>{{ m.location or 'Venue TBC' }} &nbsp;·&nbsp; {{ m.meeting_date.strftime('%I:%M %p') }}{% if m.ward %} &nbsp;·&nbsp; {{ m.ward }} ward{% endif %}</p>
+      </div>
+      <span class="event-open">Open</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+
+<footer>
+  <span>© 2025 SquareRoot Inc · CampaignDesk</span>
+  <span>Powered by CampaignDesk — the campaign management platform for Kenya</span>
+</footer>
+
+</body>
+</html>

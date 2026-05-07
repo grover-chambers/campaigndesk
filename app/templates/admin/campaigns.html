@@ -1,0 +1,65 @@
+{% extends 'admin/base.html' %}
+{% block page_title %}Campaigns{% endblock %}
+{% block content %}
+
+<div class="actions-bar">
+  <a href="{{ url_for('admin.create_campaign') }}" class="btn btn-primary">+ New campaign</a>
+  <form method="GET" style="display:flex;gap:8px;flex:1">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search by candidate name…" style="flex:1">
+    <button type="submit" class="btn btn-secondary">Search</button>
+    {% if q %}<a href="{{ url_for('admin.campaigns') }}" class="btn btn-ghost">Clear</a>{% endif %}
+  </form>
+</div>
+
+<div class="card" style="padding:0">
+  {% if campaigns %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Candidate</th><th>Party</th><th>Seat</th><th>Constituency</th>
+        <th>Const. Code</th><th>Tier</th><th>Status</th><th>Created</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for c in campaigns %}
+      <tr>
+        <td>
+          <div style="font-weight:600;font-size:13px">{{ c.candidate_name }}</div>
+          <div style="font-size:11px;color:var(--muted)">/c/{{ c.slug }}/login</div>
+        </td>
+        <td style="font-size:12px">{{ c.party }}</td>
+        <td style="font-size:12px">{{ c.seat_level }}</td>
+        <td style="font-size:12px">{{ c.constituency }}<br><span style="color:var(--muted);font-size:10px">{{ c.county }}</span></td>
+        <td>
+          {% if c.constituency_code %}
+            <code style="font-size:11px;background:var(--bg3);padding:2px 6px;border-radius:4px">{{ c.constituency_code }}</code>
+          {% else %}
+            <span style="color:var(--muted);font-size:11px">not set</span>
+          {% endif %}
+        </td>
+        <td><span class="badge badge-trial">{{ c.subscription.tier if c.subscription else 'starter' }}</span></td>
+        <td>
+          <form method="POST" action="{{ url_for('admin.toggle_campaign', cid=c.id) }}" style="display:inline">
+            <button type="submit" class="badge {{ 'badge-on' if c.is_active else 'badge-off' }}"
+              style="border:none;cursor:pointer;padding:3px 8px">
+              {{ '● Active' if c.is_active else '○ Off' }}
+            </button>
+          </form>
+        </td>
+        <td style="font-size:11px;color:var(--muted)">{{ c.created_at.strftime('%d %b %Y') }}</td>
+        <td>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <a href="{{ url_for('admin.edit_campaign', cid=c.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+            <button onclick="openInspect({{ c.id }}, '{{ c.candidate_name }}', '/c/{{ c.slug }}/login')" class="btn btn-secondary btn-sm">🔍 Inspect</button>
+            <a href="/c/{{ c.slug }}/login" target="_blank" class="btn btn-ghost btn-sm">↗</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">No campaigns found.</div>
+  {% endif %}
+</div>
+{% endblock %}

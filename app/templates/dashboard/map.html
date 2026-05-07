@@ -1,0 +1,282 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Ward Activity Map{% endblock %}
+{% block content %}
+
+{% set seat = campaign.seat_level | upper %}
+{% if seat == 'MCA' %}
+  {% set map_scope = 'ward' %}
+  {% set scope_label = campaign.ward ~ ' Ward' %}
+{% elif seat in ['MP', 'WOMREP'] %}
+  {% set map_scope = 'constituency' %}
+  {% set scope_label = campaign.constituency ~ ' Constituency' %}
+{% else %}
+  {% set map_scope = 'county' %}
+  {% set scope_label = campaign.county ~ ' County' %}
+{% endif %}
+
+<div class="actions-bar">
+  <div>
+    <span style="font-size:13px;color:var(--muted)">
+      {{ campaign.seat_level }} · {{ scope_label }}
+    </span>
+    <span style="margin-left:10px;font-size:11px;background:var(--bg3);border:1px solid var(--border);padding:3px 10px;border-radius:20px;color:var(--muted)">
+      {% if map_scope == 'ward' %}Showing: your ward only
+      {% elif map_scope == 'constituency' %}Showing: all wards in constituency
+      {% else %}Showing: all constituencies in county{% endif %}
+    </span>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:14px;align-items:center;font-size:12px">
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#94a3b8;display:inline-block"></span>No data</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#ef4444;display:inline-block"></span>Cold</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#f97316;display:inline-block"></span>Warm</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block"></span>Active</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#16a34a;display:inline-block"></span>Hot</span>
+  </div>
+</div>
+
+<div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+  <div id="map" style="height:560px;width:100%"></div>
+</div>
+<div id="ward-table-wrap"></div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const HEAT       = {cold:'#ef4444', warm:'#f97316', active:'#22c55e', hot:'#16a34a'}
+const NODATA     = '#94a3b8'
+const PRIMARY    = '{{ colors.primary }}'
+const MAP_SCOPE  = '{{ map_scope }}'
+const CONST_CODE = '{{ campaign.constituency_code or "" }}'
+const WARD_NAME  = '{{ campaign.ward or "" }}'.toLowerCase().trim()
+const COUNTY_NAM = '{{ campaign.county or "" }}'.toUpperCase().trim()
+const SEAT       = '{{ campaign.seat_level | upper }}'
+const SCOPE_LABEL= '{{ scope_label }}'
+
+const map = L.map('map', {zoomControl:true})
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution:'© OpenStreetMap © CARTO', maxZoom:19
+}).addTo(map)
+map.setView([-1.25, 36.89], 12)
+
+fetch("{{ url_for('dashboard.ward_stats') }}")
+  .then(r => r.json())
+  .then(data => {
+    const wardStats = {}
+    ;(data.wards || []).forEach(w => {
+      wardStats[w.ward.toLowerCase().trim()] = w
+    })
+
+    // For county level we need constituencies.geojson, otherwise wards.geojson
+    const geoFile = MAP_SCOPE === 'county'
+      ? "{{ url_for('static', filename='geo/constituencies.geojson') }}"
+      : "{{ url_for('static', filename='geo/wards.geojson') }}"
+
+    fetch(geoFile)
+      .then(r => r.json())
+      .then(geo => {
+
+        // ── Filter features based on seat level ──────────────
+        let features = []
+
+        if(MAP_SCOPE === 'ward') {
+          // MCA: show ONLY their specific ward polygon
+          features = geo.features.filter(f => {
+            const code = String(Math.round(f.properties.CONST_CODE || 0))
+            const wName = (f.properties.COUNTY_A_1 || '').toLowerCase().trim()
+            return code === CONST_CODE && wName === WARD_NAME
+          })
+          // If exact match fails, try fuzzy (handles "Dandora IV" vs "Dandora Area IV")
+          if(features.length === 0) {
+            features = geo.features.filter(f => {
+              const code = String(Math.round(f.properties.CONST_CODE || 0))
+              const wName = (f.properties.COUNTY_A_1 || '').toLowerCase().trim()
+              return code === CONST_CODE && (wName.includes(WARD_NAME) || WARD_NAME.includes(wName))
+            })
+          }
+        } else if(MAP_SCOPE === 'constituency') {
+          // MP/WomRep: show all wards in their constituency
+          features = geo.features.filter(f => {
+            return String(Math.round(f.properties.CONST_CODE || 0)) === CONST_CODE
+          })
+        } else {
+          // Senator/Governor: show all constituencies in county
+          features = geo.features.filter(f => {
+            return (f.properties.COUNTY_NAM || '').toUpperCase().trim() === COUNTY_NAM
+          })
+        }
+
+        if(features.length === 0) {
+          document.getElementById('map').innerHTML =
+            '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8b949e;font-size:13px;flex-direction:column;gap:8px"><div style="font-size:24px">🗺</div><div>No boundary data found for ' + SCOPE_LABEL + '</div></div>'
+          return
+        }
+
+        const matchedLayers = []
+
+        // ── Draw polygons ─────────────────────────────────────
+        const geoLayer = L.geoJSON({type:'FeatureCollection', features}, {
+          style: f => {
+            // For county scope, key is constituency name; otherwise ward name
+            const key = MAP_SCOPE === 'county'
+              ? (f.properties.CONSTITUEN || '').toLowerCase().trim()
+              : (f.properties.COUNTY_A_1 || '').toLowerCase().trim()
+            const stat  = wardStats[key]
+            const color = stat ? HEAT[stat.heat] : NODATA
+            return {
+              fillColor:   color,
+              fillOpacity: MAP_SCOPE === 'ward' ? 0.35 : (stat ? 0.45 : 0.15),
+              color:       stat ? color : '#64748b',
+              weight:      MAP_SCOPE === 'ward' ? 0 : 2,
+              opacity:     1
+            }
+          },
+          onEachFeature: (f, lyr) => {
+            matchedLayers.push(lyr)
+
+            const displayName = MAP_SCOPE === 'county'
+              ? (f.properties.CONSTITUEN || '')
+              : (f.properties.COUNTY_A_1 || '')
+            const key   = displayName.toLowerCase().trim()
+            const stat  = wardStats[key]
+            const color = stat ? HEAT[stat.heat] : NODATA
+
+            // Permanent label (skip for MCA single ward — too small)
+            if(MAP_SCOPE !== 'ward' || features.length > 1) {
+              lyr.bindTooltip(displayName, {
+                permanent: true,
+                direction: 'center',
+                className: 'ward-label'
+              })
+            }
+
+            lyr.bindPopup(`
+              <div style="font-family:-apple-system,sans-serif;min-width:190px">
+                <div style="font-weight:700;font-size:14px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #333">
+                  ${displayName}
+                </div>
+                ${stat ? `
+                <div style="font-size:12px;line-height:2.2">
+                  <div>👥 <b>${stat.supporters}</b> supporters</div>
+                  <div>📅 <b>${stat.events}</b> events held</div>
+                  <div>🔥 Score: <b>${stat.score}</b></div>
+                  <div>Status: <b style="color:${color}">${stat.heat.toUpperCase()}</b></div>
+                </div>` : `
+                <div style="font-size:12px;color:#888;margin-top:4px">
+                  No supporters yet.<br>
+                  Add supporters with ${MAP_SCOPE === 'county' ? 'constituency' : 'ward'} "<b>${displayName}</b>".
+                </div>`}
+              </div>
+            `)
+
+            lyr.on('mouseover', function() { this.setStyle({fillOpacity:0.75, weight:3}) })
+            lyr.on('mouseout',  function() { geoLayer.resetStyle(this) })
+          }
+        }).addTo(map)
+
+        // ── Bold boundary outline on top ──────────────────────
+        L.geoJSON({type:'FeatureCollection', features}, {
+          style: {
+            fill:        false,
+            fillOpacity: 0,
+            color:       PRIMARY,
+            weight:      MAP_SCOPE === 'ward' ? 4 : 3,
+            opacity:     1
+          }
+        }).addTo(map)
+
+        // For MCA: also show the rest of the constituency dimmed for context
+        {% if map_scope == 'ward' %}
+        const otherFeatures = geo.features.filter(f => {
+          const code  = String(Math.round(f.properties.CONST_CODE || 0))
+          const wName = (f.properties.COUNTY_A_1 || '').toLowerCase().trim()
+          return code === CONST_CODE && wName !== WARD_NAME
+        })
+        if(otherFeatures.length > 0) {
+          L.geoJSON({type:'FeatureCollection', features: otherFeatures}, {
+            style: {
+              fillColor:   '#1e2a3a',
+              fillOpacity: 0.3,
+              color:       '#4a5d72',
+              weight:      1,
+              opacity:     0.5,
+              dashArray:   '4 4'
+            },
+            onEachFeature: (f, lyr) => {
+              const name = f.properties.COUNTY_A_1 || ''
+              lyr.bindTooltip(name + '<br><span style="font-size:10px;color:#888">Same constituency</span>', {
+                direction:'center', className:'ward-label-dim'
+              })
+            }
+          }).addTo(map)
+        }
+        {% endif %}
+
+        // Fit bounds
+        if(matchedLayers.length > 0) {
+          const padding = MAP_SCOPE === 'ward' ? 0.3 : 0.08
+          map.fitBounds(L.featureGroup(matchedLayers).getBounds().pad(padding))
+        }
+
+        // ── Stats table ───────────────────────────────────────
+        const colLabel = MAP_SCOPE === 'county' ? 'Constituency' : 'Ward'
+        let html = `<div class="card"><div class="card-title">📊 ${colLabel} breakdown — ${SCOPE_LABEL}</div>`
+        html += `<div class="table-wrap"><table><thead><tr>
+          <th>${colLabel}</th><th>Supporters</th><th>Events</th><th>Score</th><th>Status</th>
+        </tr></thead><tbody>`
+
+        features.forEach(f => {
+          const name  = MAP_SCOPE === 'county' ? (f.properties.CONSTITUEN||'') : (f.properties.COUNTY_A_1||'')
+          const stat  = wardStats[name.toLowerCase().trim()]
+          const color = stat ? HEAT[stat.heat] : NODATA
+          const heat  = stat ? stat.heat : 'no data'
+          html += `<tr>
+            <td style="font-weight:600">${name}</td>
+            <td>${stat ? stat.supporters : 0}</td>
+            <td>${stat ? stat.events : 0}</td>
+            <td><div style="display:flex;align-items:center;gap:8px">
+              <div style="height:6px;border-radius:3px;background:${color};width:${stat?Math.min(120,stat.score):4}px;min-width:4px"></div>
+              ${stat ? stat.score : 0}
+            </div></td>
+            <td><span style="color:${color};font-weight:700;font-size:11px;text-transform:uppercase">${heat}</span></td>
+          </tr>`
+        })
+
+        html += `</tbody></table></div>`
+        if(!data.wards || data.wards.length === 0) {
+          html += `<div style="padding:14px 0;font-size:12px;color:var(--muted)">
+            💡 Add supporters with the ${MAP_SCOPE === 'ward' ? 'ward' : MAP_SCOPE} name to see activity scores here.
+          </div>`
+        }
+        html += '</div>'
+        document.getElementById('ward-table-wrap').innerHTML = html
+      })
+  })
+</script>
+
+<style>
+.ward-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.9) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+}
+.ward-label-dim {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: 9px !important;
+  color: #64748b !important;
+  text-transform: uppercase !important;
+  pointer-events: none !important;
+}
+.leaflet-tooltip.ward-label::before,
+.leaflet-tooltip.ward-label-dim::before { display: none !important; }
+</style>
+{% endblock %}

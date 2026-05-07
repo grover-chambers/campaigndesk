@@ -1,0 +1,186 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Overview{% endblock %}
+{% block content %}
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-num">{{ total_members }}</div>
+    <div class="stat-label">Supporters registered</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ total_events }}</div>
+    <div class="stat-label">Events scheduled</div>
+  </div>
+  <div class="stat-card {% if overdue_tasks %}danger{% endif %}">
+    <div class="stat-num">{{ open_tasks }}</div>
+    <div class="stat-label">Open tasks{% if overdue_tasks %} · {{ overdue_tasks }} overdue{% endif %}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ total_bulletins }}</div>
+    <div class="stat-label">Bulletins posted</div>
+  </div>
+</div>
+
+<div class="actions-bar">
+  <button class="btn btn-primary" onclick="openModal('bulletin')">📢 Post bulletin</button>
+  <button class="btn btn-secondary" onclick="openModal('event')">📅 Schedule event</button>
+  <button class="btn btn-secondary" onclick="openModal('member')">👥 Add supporter</button>
+  <button class="btn btn-secondary" onclick="openModal('task')">✅ Create task</button>
+  <a href="/c/{{ campaign.slug }}/board" target="_blank" class="btn btn-ghost">↗ View noticeboard</a>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="card">
+      <div class="card-title">📅 Upcoming events</div>
+      {% if upcoming_events %}
+        {% for e in upcoming_events %}
+        <div style="padding:10px 0;border-bottom:1px solid var(--subtle);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600">{{ e.title }}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">{{ e.event_date.strftime('%d %b %Y, %I:%M %p') }} · {{ e.location or 'TBC' }}</div>
+          </div>
+          <span class="badge badge-{{ e.status }}">{{ e.status }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><div class="empty-icon">📅</div>No upcoming events</div>
+      {% endif %}
+      <div style="margin-top:12px"><a href="{{ url_for('dashboard.events') }}" class="btn btn-ghost btn-sm">All events →</a></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Recent activity</div>
+      {% if activities %}
+        {% for a in activities %}
+        <div class="activity-item">
+          <div class="activity-dot"></div>
+          <div>
+            <div class="activity-text">{{ a.description }}</div>
+            <div class="activity-time">{{ a.created_at.strftime('%d %b, %H:%M') }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><div class="empty-icon">📋</div>No activity yet</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-title">✅ Open tasks{% if overdue_tasks %} <span class="badge badge-high">{{ overdue_tasks }} overdue</span>{% endif %}</div>
+      {% if recent_tasks %}
+        {% for t in recent_tasks %}
+        <div style="padding:10px 0;border-bottom:1px solid var(--subtle);display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:{% if t.due_date and t.due_date < now %}#f87171{% else %}inherit{% endif %}">{{ t.title }}</div>
+            {% if t.due_date %}
+            <div style="font-size:11px;margin-top:2px;color:{% if t.due_date < now %}#f87171{% else %}var(--muted){% endif %}">Due {{ t.due_date.strftime('%d %b') }}</div>
+            {% endif %}
+          </div>
+          <span class="badge badge-{{ t.priority }}">{{ t.priority }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><div class="empty-icon">✅</div>No open tasks</div>
+      {% endif %}
+      <div style="margin-top:12px"><a href="{{ url_for('dashboard.tasks') }}" class="btn btn-ghost btn-sm">All tasks →</a></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📢 Recent bulletins</div>
+      {% if recent_bulletins %}
+        {% for b in recent_bulletins %}
+        <div style="padding:10px 0;border-bottom:1px solid var(--subtle)">
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+            <span class="badge badge-{{ b.tag }}">{{ b.tag }}</span>
+            {% if b.is_public %}<span class="badge badge-public">Public</span>{% else %}<span class="badge badge-internal">Internal</span>{% endif %}
+          </div>
+          <div style="font-size:13px;font-weight:600">{{ b.title }}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">{{ b.created_at.strftime('%d %b %Y') }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><div class="empty-icon">📢</div>No bulletins yet</div>
+      {% endif %}
+      <div style="margin-top:12px"><a href="{{ url_for('dashboard.bulletins') }}" class="btn btn-ghost btn-sm">All bulletins →</a></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-backdrop" id="modal-bulletin">
+  <div class="modal">
+    <div class="modal-title">Post bulletin</div>
+    <form method="POST" action="{{ url_for('dashboard.create_bulletin') }}">
+      <div class="form-group"><label class="form-label">Title</label><input type="text" name="title" required></div>
+      <div class="form-group"><label class="form-label">Content</label><textarea name="content" rows="4" required></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tag</label><select name="tag"><option value="update">Update</option><option value="pledge">Pledge</option><option value="event">Event</option></select></div>
+        <div class="form-group"><label class="form-label">&nbsp;</label><div class="form-check"><input type="checkbox" name="is_public" id="bp" checked><label for="bp">Post to public noticeboard</label></div></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('bulletin')">Cancel</button><button type="submit" class="btn btn-primary">Post</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-event">
+  <div class="modal">
+    <div class="modal-title">Schedule event</div>
+    <form method="POST" action="{{ url_for('dashboard.create_event') }}">
+      <div class="form-group"><label class="form-label">Title</label><input type="text" name="title" required></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea name="description" rows="2"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Date & time</label><input type="datetime-local" name="event_date" required></div>
+        <div class="form-group"><label class="form-label">Ward</label><input type="text" name="ward" placeholder="e.g. Kayole"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Location</label><input type="text" name="location" placeholder="Area/neighbourhood"></div>
+        <div class="form-group"><label class="form-label">Venue</label><input type="text" name="venue" placeholder="Building/hall name"></div>
+      </div>
+      <div class="form-check"><input type="checkbox" name="is_public" id="ep" checked><label for="ep">Show on public noticeboard</label></div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('event')">Cancel</button><button type="submit" class="btn btn-primary">Schedule</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-member">
+  <div class="modal">
+    <div class="modal-title">Add supporter</div>
+    <form method="POST" action="{{ url_for('dashboard.add_member') }}">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Full name</label><input type="text" name="name" required></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="tel" name="phone" placeholder="07xx xxxxxx" required></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Ward</label><input type="text" name="ward" placeholder="e.g. Kayole"></div>
+        <div class="form-group"><label class="form-label">Role</label><select name="role"><option value="supporter">Supporter</option><option value="agent">Agent</option><option value="coordinator">Coordinator</option><option value="volunteer">Volunteer</option></select></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('member')">Cancel</button><button type="submit" class="btn btn-primary">Add supporter</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-task">
+  <div class="modal">
+    <div class="modal-title">Create task</div>
+    <form method="POST" action="{{ url_for('dashboard.create_task') }}">
+      <div class="form-group"><label class="form-label">Task title</label><input type="text" name="title" required></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea name="description" rows="2"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Priority</label><select name="priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></div>
+        <div class="form-group"><label class="form-label">Due date</label><input type="datetime-local" name="due_date"></div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" onclick="closeModal('task')">Cancel</button><button type="submit" class="btn btn-primary">Create task</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openModal(id){document.getElementById('modal-'+id).classList.add('open')}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open')}
+document.querySelectorAll('.modal-backdrop').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}))
+</script>
+{% endblock %}

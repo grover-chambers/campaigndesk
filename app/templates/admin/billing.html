@@ -1,0 +1,100 @@
+{% extends 'admin/base.html' %}
+{% block page_title %}Billing{% endblock %}
+{% block content %}
+
+<div class="card" style="padding:0">
+  {% if subs %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Campaign</th><th>Tier</th><th>Status</th><th>Trial ends / Next due</th><th>Last paid</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for s in subs %}
+      <tr>
+        <td>
+          <div style="font-weight:600;font-size:13px">{{ s.campaign.candidate_name }}</div>
+          <div style="font-size:11px;color:var(--muted)">{{ s.campaign.party }} · {{ s.campaign.seat_level }}</div>
+        </td>
+        <td><span class="badge badge-trial">{{ s.tier|title }}</span></td>
+        <td><span class="badge badge-{{ s.status }}">{{ s.status|title }}</span></td>
+        <td style="font-size:12px;color:var(--muted)">
+          {% if s.status == 'trial' and s.trial_ends %}
+            {{ s.trial_ends.strftime('%d %b %Y') }}
+            {% if s.trial_ends < now %}<span style="color:#f87171;margin-left:4px">EXPIRED</span>{% endif %}
+          {% elif s.next_due %}
+            {{ s.next_due.strftime('%d %b %Y') }}
+          {% else %}—{% endif %}
+        </td>
+        <td style="font-size:12px;color:var(--muted)">
+          {% if s.last_paid %}{{ s.last_paid.strftime('%d %b %Y') }}{% else %}Never{% endif %}
+          {% if s.mpesa_ref %}<div style="font-size:10px;color:var(--subtle)">{{ s.mpesa_ref }}</div>{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:4px;flex-wrap:wrap">
+            <button class="btn btn-success btn-sm" onclick="openModal('pay-{{ s.campaign_id }}')">Record payment</button>
+            <button class="btn btn-ghost btn-sm" onclick="openModal('trial-{{ s.campaign_id }}')">Extend trial</button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">No subscriptions found.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block modals %}
+{% for s in subs %}
+<div class="modal-backdrop" id="modal-pay-{{ s.campaign_id }}">
+  <div class="modal">
+    <div class="modal-title">💳 Record payment · {{ s.campaign.candidate_name }}</div>
+    <form method="POST" action="{{ url_for('admin.record_payment', cid=s.campaign_id) }}">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (Ksh)</label>
+          <input type="number" name="amount" required placeholder="e.g. 2500">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mpesa reference</label>
+          <input type="text" name="mpesa_ref" placeholder="e.g. QGH7YT8K2L">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Change tier</label>
+        <select name="tier">
+          {% for t in ['starter','constituency','county'] %}
+          <option value="{{ t }}" {{ 'selected' if s.tier==t }}>{{ t|title }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('pay-{{ s.campaign_id }}')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Record payment</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-trial-{{ s.campaign_id }}">
+  <div class="modal">
+    <div class="modal-title">⏱ Extend trial · {{ s.campaign.candidate_name }}</div>
+    <form method="POST" action="{{ url_for('admin.extend_trial', cid=s.campaign_id) }}">
+      <div class="form-group">
+        <label class="form-label">Extend by (days)</label>
+        <select name="days">
+          {% for d in [7,14,30,60,90] %}
+          <option value="{{ d }}">{{ d }} days</option>{% endfor %}
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('trial-{{ s.campaign_id }}')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Extend trial</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

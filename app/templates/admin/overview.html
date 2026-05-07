@@ -1,0 +1,62 @@
+{% extends 'admin/base.html' %}
+{% block page_title %}Overview{% endblock %}
+{% block content %}
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-num">{{ total_campaigns }}</div><div class="stat-label">Total campaigns</div></div>
+  <div class="stat-card success"><div class="stat-num">{{ active_campaigns }}</div><div class="stat-label">Active campaigns</div></div>
+  <div class="stat-card"><div class="stat-num">{{ total_members }}</div><div class="stat-label">Total officials</div></div>
+  <div class="stat-card warn"><div class="stat-num">{{ trial_campaigns }}</div><div class="stat-label">On trial</div></div>
+  <div class="stat-card {% if overdue %}danger{% endif %}"><div class="stat-num">{{ overdue }}</div><div class="stat-label">Overdue billing</div></div>
+  <div class="stat-card success"><div class="stat-num">Ksh {{ '{:,.0f}'.format(revenue) }}</div><div class="stat-label">Revenue this month</div></div>
+</div>
+
+<div class="two-col">
+  <div>
+    <div class="card">
+      <div class="card-title">📋 Recent campaigns</div>
+      {% for c in recent %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--subtle)">
+        <div>
+          <div style="font-size:13px;font-weight:600">{{ c.candidate_name }}</div>
+          <div style="font-size:11px;color:var(--muted)">{{ c.party }} · {{ c.seat_level }} · {{ c.constituency }}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="badge {{ 'badge-on' if c.is_active else 'badge-off' }}">{{ 'Active' if c.is_active else 'Off' }}</span>
+          <button onclick="openInspect({{ c.id }}, '{{ c.candidate_name }}', '')" class="btn btn-ghost btn-sm">🔍 Inspect →</button>
+        </div>
+      </div>
+      {% endfor %}
+      <div style="margin-top:12px">
+        <a href="{{ url_for('admin.campaigns') }}" class="btn btn-ghost btn-sm">All campaigns →</a>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    {% if expiring %}
+    <div class="card" style="border-color:rgba(249,115,22,.3)">
+      <div class="card-title" style="color:#f97316">⚠ Trials expiring soon</div>
+      {% for s in expiring %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--subtle)">
+        <div>
+          <div style="font-size:13px;font-weight:600">{{ s.campaign.candidate_name }}</div>
+          <div style="font-size:11px;color:#f97316">Expires {{ s.trial_ends.strftime('%d %b %Y') }}</div>
+        </div>
+        <a href="{{ url_for('admin.billing') }}" class="btn btn-sm" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:#f97316">Manage</a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-title">⚡ Quick actions</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="{{ url_for('admin.create_campaign') }}" class="btn btn-primary" style="justify-content:center">+ Create new campaign</a>
+        <a href="{{ url_for('admin.campaigns') }}" class="btn btn-secondary" style="justify-content:center">📋 Manage campaigns</a>
+        <a href="{{ url_for('admin.billing') }}" class="btn btn-secondary" style="justify-content:center">💳 Billing & payments</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

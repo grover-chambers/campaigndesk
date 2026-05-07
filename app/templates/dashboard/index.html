@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ campaign.candidate_name }} | {{ campaign.party }} Dashboard</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+            background:#0a0f1a;
+            color:#e2e8f0;
+        }
+        
+        :root {
+            --party-primary: {{ party_color.primary }};
+            --party-secondary: {{ party_color.secondary }};
+            --party-primary-rgb: {{ party_color.primary_rgb }};
+            --party-secondary-rgb: {{ party_color.secondary_rgb }};
+            --sidebar-width: 280px;
+            --sidebar-collapsed: 80px;
+        }
+        
+        .dashboard{display:flex;min-height:100vh;}
+        
+        /* Sidebar */
+        .sidebar{
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--party-primary) 0%, var(--party-secondary) 100%);
+            position:fixed;
+            height:100vh;
+            overflow-y:auto;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+        
+        .sidebar.collapsed{ width: var(--sidebar-collapsed); }
+        .sidebar.collapsed .sidebar-header .campaign-name,
+        .sidebar.collapsed .sidebar-header .campaign-party,
+        .sidebar.collapsed .sidebar-header .candidate-role,
+        .sidebar.collapsed .nav-item span:not(.nav-icon){ display: none; }
+        
+        .collapse-btn{
+            position: absolute;
+            right: -12px;
+            top: 20px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--party-primary);
+            font-weight: bold;
+            z-index: 101;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .sidebar-header{
+            padding: 32px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+        
+        .party-logo{
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 30px;
+        }
+        
+        .campaign-name{ font-size: 18px; font-weight: 800; color: white; margin-bottom: 8px; }
+        .campaign-party{ font-size: 11px; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 1px; }
+        .candidate-role{ font-size: 10px; color: rgba(255,255,255,0.6); margin-top: 8px; }
+        
+        .nav-menu{ padding: 20px 0; }
+        .nav-item{
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .nav-item:hover{ background: rgba(255,255,255,0.1); color: white; padding-left: 28px; }
+        .nav-item.active{ background: rgba(255,255,255,0.15); border-left-color: white; color: white; }
+        .nav-icon{ font-size: 20px; min-width: 24px; }
+        
+        /* Main Content */
+        .main-content{
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 24px 32px;
+            transition: margin-left 0.3s ease;
+            background: #0a0f1a;
+        }
+        .main-content.expanded{ margin-left: var(--sidebar-collapsed); }
+        
+        /* Top Bar */
+        .top-bar{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(var(--party-primary-rgb), 0.3);
+        }
+        .page-title{
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--party-primary), var(--party-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .user-info{
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(var(--party-primary-rgb), 0.1);
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: 1px solid rgba(var(--party-primary-rgb), 0.3);
+        }
+        .user-name{ color: var(--party-primary); font-weight: 600; }
+        .logout-btn{
+            padding: 6px 16px;
+            background: var(--party-primary);
+            border-radius: 20px;
+            text-decoration: none;
+            color: white;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        /* Stats Grid */
+        .stats-grid{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        .stat-card{
+            background: linear-gradient(135deg, #111827, #0f1420);
+            border: 1px solid rgba(var(--party-primary-rgb), 0.2);
+            border-radius: 20px;
+            padding: 24px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before{
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--party-primary), var(--party-secondary));
+        }
+        .stat-card:hover{ transform: translateY(-4px); border-color: rgba(var(--party-primary-rgb), 0.5); }
+        .stat-value{
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--party-primary), var(--party-secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .stat-label{ color: #94a3b8; font-size: 13px; margin-top: 8px; }
+        
+        /* Quick Actions */
+        .quick-actions{
+            display: flex;
+            gap: 16px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        .action-btn{
+            background: rgba(var(--party-primary-rgb), 0.1);
+            border: 1px solid rgba(var(--party-primary-rgb), 0.3);
+            padding: 10px 20px;
+            border-radius: 40px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .action-btn:hover{ background: var(--party-primary); transform: translateY(-2px); }
+        
+        /* Layout */
+        .two-columns{ display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .section{
+            background: #111827;
+            border: 1px solid rgba(var(--party-primary-rgb), 0.2);
+            border-radius: 20px;
+            padding: 24px;
+        }
+        .section-title{
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--party-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Items */
+        .activity-item, .task-item, .event-item, .bulletin-item, .member-item{
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .task-priority{
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .priority-high{ background: #ef4444; color: white; }
+        .priority-medium{ background: #f59e0b; color: white; }
+        .priority-low{ background: #10b981; color: white; }
+        
+        /* Hierarchy Tree */
+        .org-node{
+            margin-bottom: 8px;
+        }
+        .org-card{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(var(--party-primary-rgb), 0.1);
+            border-radius: 12px;
+            border-left: 3px solid var(--party-primary);
+        }
+        .org-children{ margin-left: 30px; margin-top: 8px; }
+        
+        /* Modal */
+        .modal{
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active{ display: flex; }
+        .modal-content{
+            background: #111827;
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid rgba(var(--party-primary-rgb), 0.3);
+        }
+        .modal-content input, .modal-content textarea, .modal-content select{
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            background: #0a0f1a;
+            border: 1px solid rgba(var(--party-primary-rgb), 0.3);
+            border-radius: 12px;
+            color: white;
+        }
+        .btn-primary{
+            background: linear-gradient(135deg, var(--party-primary), var(--party-secondary));
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-secondary{
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 40px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        
+        @media(max-width: 768px){
+            .two-columns{ grid-template-columns: 1fr; }
+            .main-content{ padding: 16px; }
+            .top-bar{ flex-direction: column; gap: 12px; }
+            .quick-actions{ justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="sidebar" id="sidebar">
+        <div class="collapse-btn" onclick="toggleSidebar()">◀</div>
+        <div class="sidebar-header">
+            <div class="party-logo">🎯</div>
+            <div class="campaign-name">{{ campaign.candidate_name }}</div>
+            <div class="campaign-party">{{ campaign.party }}</div>
+            <div class="candidate-role">{{ campaign.seat_level|upper }} Candidate</div>
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item active" data-view="overview"><span class="nav-icon">📊</span> <span>Overview</span></div>
+            <div class="nav-item" data-view="bulletin"><span class="nav-icon">📢</span> <span>Bulletin Board</span></div>
+            <div class="nav-item" data-view="members"><span class="nav-icon">👥</span> <span>Team Members</span></div>
+            <div class="nav-item" data-view="events"><span class="nav-icon">📅</span> <span>Events</span></div>
+            <div class="nav-item" data-view="tasks"><span class="nav-icon">✅</span> <span>Tasks</span></div>
+            <div class="nav-item" data-view="manifesto"><span class="nav-icon">📜</span> <span>Manifesto</span></div>
+            <div class="nav-item" data-view="whatsapp"><span class="nav-icon">📱</span> <span>WhatsApp</span></div>
+            <div class="nav-item" data-view="settings"><span class="nav-icon">⚙️</span> <span>Settings</span></div>
+        </div>
+    </div>
+    
+    <div class="main-content" id="mainContent">
+        <div class="top-bar">
+            <h1 class="page-title" id="pageTitle">Dashboard Overview</h1>
+            <div class="user-info">
+                <span>👤</span>
+                <span class="user-name">{{ member.name }}</span>
+                <span class="user-role">({{ member.role_display or member.role }})</span>
+                <a href="/dashboard/logout" class="logout-btn">Logout</a>
+            </div>
+        </div>
+        <div id="contentArea"><div class="section">Loading...</div></div>
+    </div>
+</div>
+
+<div id="modal" class="modal"><div class="modal-content" id="modalContent"></div></div>
+
+<script>
+    let currentView = 'overview';
+    let sidebarCollapsed = false;
+    
+    function toggleSidebar() {
+        sidebarCollapsed = !sidebarCollapsed;
+        document.getElementById('sidebar').classList.toggle('collapsed');
+        document.getElementById('mainContent').classList.toggle('expanded');
+    }
+    
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const view = item.dataset.view;
+            currentView = view;
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+            const titles = {overview:'Dashboard Overview', bulletin:'Bulletin Board', members:'Team Management', events:'Events Calendar', tasks:'Tasks & Assignments', manifesto:'Campaign Manifesto', whatsapp:'WhatsApp Integration', settings:'Campaign Settings'};
+            document.getElementById('pageTitle').textContent = titles[view] || 'Dashboard';
+            loadView(view);
+        });
+    });
+    
+    async function loadView(view) {
+        const content = document.getElementById('contentArea');
+        if (view === 'overview') {
+            const stats = await fetch('/dashboard/api/stats').then(r => r.json());
+            const activities = await fetch('/dashboard/api/activities').then(r => r.json());
+            const tasks = await fetch('/dashboard/api/tasks').then(r => r.json());
+            const bulletins = await fetch('/dashboard/api/bulletins').then(r => r.json());
+            
+            content.innerHTML = `
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="openModal('bulletin')">📢 Post Update</button>
+                    <button class="action-btn" onclick="openModal('event')">📅 Schedule Event</button>
+                    <button class="action-btn" onclick="openModal('member')">👥 Add Member</button>
+                    <button class="action-btn" onclick="openModal('task')">✅ Assign Task</button>
+                    <button class="action-btn" onclick="openModal('broadcast')">📱 Broadcast</button>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-value">${stats.total_members}</div><div class="stat-label">Team Members</div></div>
+                    <div class="stat-card"><div class="stat-value">${stats.total_bulletins}</div><div class="stat-label">Bulletins</div></div>
+                    <div class="stat-card"><div class="stat-value">${stats.upcoming_events}</div><div class="stat-label">Upcoming Events</div></div>
+                    <div class="stat-card"><div class="stat-value">${stats.pending_tasks}</div><div class="stat-label">Pending Tasks</div></div>
+                </div>
+                <div class="two-columns">
+                    <div class="section"><div class="section-title">📋 Recent Activity</div>${activities.map(a => `<div class="activity-item"><div><strong>${a.member_name}</strong> ${a.description}</div><small>${new Date(a.created_at).toLocaleString()}</small></div>`).join('')}</div>
+                    <div class="section"><div class="section-title">✅ My Tasks</div>${tasks.slice(0,5).map(t => `<div class="task-item"><div><strong>${t.title}</strong><br><small>Due: ${new Date(t.due_date).toLocaleDateString()}</small></div><span class="task-priority priority-${t.priority}">${t.priority}</span></div>`).join('')}</div>
+                </div>
+                <div class="section"><div class="section-title">📢 Recent Bulletins</div>${bulletins.slice(0,3).map(b => `<div class="bulletin-item"><div><strong>${b.title}</strong><br><small>${new Date(b.created_at).toLocaleDateString()} · ${b.tag}</small><p style="margin-top:8px;">${b.content.substring(0,100)}...</p></div></div>`).join('')}</div>
+            `;
+        } else if (view === 'members') {
+            content.innerHTML = `<div class="quick-actions"><button class="action-btn" onclick="openModal('member')">➕ Add Team Member</button></div><div id="membersContent" class="section"><div class="section-title">🏢 Team Hierarchy</div><div id="orgChart"></div><div class="section-title" style="margin-top:24px;">👥 All Members</div><div id="membersList"></div></div>`;
+            loadMembers();
+        } else if (view === 'tasks') {
+            const tasks = await fetch('/dashboard/api/tasks').then(r => r.json());
+            content.innerHTML = `<div class="quick-actions"><button class="action-btn" onclick="openModal('task')">➕ Assign Task</button></div><div class="section"><div class="section-title">✅ All Tasks</div>${tasks.map(t => `<div class="task-item"><div><strong>${t.title}</strong><br><small>Assigned to: ${t.assigned_to_name || 'Unknown'} | Due: ${new Date(t.due_date).toLocaleDateString()}</small><p>${t.description}</p></div><span class="task-priority priority-${t.priority}">${t.priority}</span></div>`).join('')}</div>`;
+        } else if (view === 'events') {
+            const events = await fetch('/dashboard/api/events').then(r => r.json());
+            content.innerHTML = `<div class="quick-actions"><button class="action-btn" onclick="openModal('event')">➕ Schedule Event</button></div><div class="section"><div class="section-title">📅 All Events</div>${events.map(e => `<div class="event-item"><div><strong>${e.title}</strong><br>${e.description}<br><small>📅 ${new Date(e.event_date).toLocaleString()} 📍 ${e.location}</small></div></div>`).join('')}</div>`;
+        } else if (view === 'manifesto') {
+            const manifesto = await fetch('/dashboard/api/manifesto').then(r => r.json());
+            content.innerHTML = `<div class="section"><div class="section-title">📜 Campaign Manifesto</div><div id="manifestoContent" style="padding:16px; background:#0a0f1a; border-radius:12px;">${manifesto.manifesto}</div><button class="btn-primary" style="margin-top:16px;" onclick="editManifesto()">Edit Manifesto</button></div>`;
+        } else if (view === 'whatsapp') {
+            content.innerHTML = `<div class="section"><div class="section-title">📱 WhatsApp Integration</div><div><p>Connect your WhatsApp Business account to send broadcasts to your team.</p><button class="btn-primary" onclick="connectWhatsApp()">Connect WhatsApp Business</button></div><div class="section-title" style="margin-top:24px;">📨 Send Broadcast</div><select id="broadcastGroup" style="width:100%; padding:12px; margin-bottom:12px; background:#0a0f1a; border:1px solid rgba(var(--party-primary-rgb),0.3); border-radius:12px;"><option value="all">All Members</option><option value="field_team">Field Team</option><option value="volunteers">Volunteers</option></select><textarea id="broadcastMessage" rows="4" placeholder="Type your message..." style="width:100%; padding:12px; margin-bottom:12px; background:#0a0f1a; border:1px solid rgba(var(--party-primary-rgb),0.3); border-radius:12px;"></textarea><button class="btn-primary" onclick="sendBroadcast()">Send Broadcast</button></div>`;
+        }
+    }
+    
+    async function loadMembers() {
+        const members = await fetch('/dashboard/api/members').then(r => r.json());
+        const byManager = {'root': members.filter(m => !m.manager_id)};
+        members.forEach(m => { const mid = m.manager_id || 'root'; if(!byManager[mid]) byManager[mid]=[]; byManager[mid].push(m); });
+        function renderTree(id, level=0) {
+            const children = byManager[id] || [];
+            return children.map(m => `<div class="org-node" style="margin-left:${level*20}px;"><div class="org-card"><div>👤</div><div><strong>${m.name}</strong><br><small>${m.role_display}</small><br><small>📞 ${m.phone}</small></div></div>${renderTree(m.id, level+1)}</div>`).join('');
+        }
+        document.getElementById('orgChart').innerHTML = renderTree('root') || '<p>No team members yet.</p>';
+        document.getElementById('membersList').innerHTML = members.map(m => `<div class="member-item"><div><strong>${m.name}</strong><br><small>${m.role_display} | 📞 ${m.phone}</small></div><button class="btn-secondary" onclick="resetCode(${m.id})">Reset Code</button></div>`).join('');
+    }
+    
+    function openModal(type) {
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modalContent');
+        if (type === 'bulletin') modalContent.innerHTML = `<h3>Post Bulletin</h3><input type="text" id="bulletinTitle" placeholder="Title"><textarea id="bulletinContent" rows="4" placeholder="Content"></textarea><select id="bulletinTag"><option value="update">Update</option><option value="pledge">Pledge</option><option value="event">Event</option></select><div style="display:flex; gap:8px; margin-top:16px;"><button class="btn-primary" onclick="createBulletin()">Post</button><button class="btn-secondary" onclick="closeModal()">Cancel</button></div>`;
+        else if (type === 'member') modalContent.innerHTML = `<h3>Add Team Member</h3><input type="text" id="memberName" placeholder="Full Name"><input type="tel" id="memberPhone" placeholder="Phone"><select id="memberRole"><option value="volunteer">Volunteer</option><option value="field_coordinator">Field Coordinator</option><option value="comms_lead">Communications Lead</option><option value="finance">Finance Officer</option></select><div style="display:flex; gap:8px; margin-top:16px;"><button class="btn-primary" onclick="addMember()">Add</button><button class="btn-secondary" onclick="closeModal()">Cancel</button></div>`;
+        else if (type === 'task') modalContent.innerHTML = `<h3>Assign Task</h3><input type="text" id="taskTitle" placeholder="Task Title"><textarea id="taskDesc" rows="3" placeholder="Description"></textarea><select id="taskPriority"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select><input type="datetime-local" id="taskDue"><div style="display:flex; gap:8px; margin-top:16px;"><button class="btn-primary" onclick="createTask()">Assign</button><button class="btn-secondary" onclick="closeModal()">Cancel</button></div>`;
+        modal.classList.add('active');
+    }
+    
+    async function createBulletin() {
+        const title = document.getElementById('bulletinTitle').value;
+        const content = document.getElementById('bulletinContent').value;
+        const tag = document.getElementById('bulletinTag').value;
+        await fetch('/dashboard/api/bulletins', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title,content,tag})});
+        closeModal();
+        loadView('bulletin');
+    }
+    
+    async function addMember() {
+        const name = document.getElementById('memberName').value;
+        const phone = document.getElementById('memberPhone').value;
+        const role = document.getElementById('memberRole').value;
+        const res = await fetch('/dashboard/api/members', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,phone,role})});
+        const data = await res.json();
+        alert(`Member added! Access code: ${data.access_code}`);
+        closeModal();
+        loadMembers();
+    }
+    
+    async function createTask() {
+        const title = document.getElementById('taskTitle').value;
+        const description = document.getElementById('taskDesc').value;
+        const priority = document.getElementById('taskPriority').value;
+        const due_date = document.getElementById('taskDue').value;
+        await fetch('/dashboard/api/tasks', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title,description,priority,due_date})});
+        closeModal();
+        loadView('tasks');
+    }
+    
+    function editManifesto() { window.location.href = '/dashboard/manifesto/edit'; }
+    function connectWhatsApp() { alert('WhatsApp integration - Coming soon!'); }
+    function sendBroadcast() { alert('Broadcast sent - Coming soon!'); }
+    function resetCode(id) { alert('Reset code - Coming soon!'); }
+    function closeModal() { document.getElementById('modal').classList.remove('active'); }
+    
+    loadView('overview');
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start your campaign — CampaignDesk</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0f1a;color:#e2e8f0;}
+        .container{max-width:1200px;margin:0 auto;padding:0 24px;}
+        
+        .header{background:#0a0f1a;border-bottom:1px solid #1f2937;padding:20px 0;}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+        .logo-icon{width:32px;height:32px;background:#eab308;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+        .logo-icon svg{width:18px;height:18px;fill:#0a0f1a;}
+        .logo-text{font-size:20px;font-weight:800;color:white;}
+        .logo-text span{color:#eab308;}
+        
+        .hero{padding:60px 0 40px;text-align:center;}
+        .hero h1{font-size:42px;font-weight:800;margin-bottom:16px;}
+        .hero p{color:#94a3b8;font-size:16px;max-width:600px;margin:0 auto;}
+        
+        .seat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;margin:40px 0 60px;}
+        .seat-card{background:#111827;border:1px solid #1f2937;border-radius:20px;padding:32px;cursor:pointer;transition:all 0.2s;}
+        .seat-card:hover{transform:translateY(-4px);border-color:#eab308;}
+        .seat-card.selected{border-color:#eab308;background:linear-gradient(135deg,#111827,rgba(234,179,8,0.05));}
+        .seat-badge{display:inline-block;background:rgba(234,179,8,0.1);color:#eab308;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:16px;}
+        .seat-card h3{font-size:22px;margin-bottom:8px;}
+        .price{font-size:28px;font-weight:800;color:#eab308;margin:16px 0 8px;}
+        .price span{font-size:14px;font-weight:400;color:#94a3b8;}
+        .feature-list{list-style:none;margin:20px 0 0;}
+        .feature-list li{padding:6px 0;font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:8px;}
+        .feature-list li::before{content:"✓";color:#eab308;}
+        
+        .btn-continue{background:#eab308;color:#0a0f1a;border:none;padding:14px 40px;border-radius:40px;font-weight:700;font-size:16px;cursor:pointer;display:block;margin:0 auto 60px;transition:all 0.2s;}
+        .btn-continue:hover{background:#ca8a04;transform:translateY(-2px);}
+        .btn-continue:disabled{opacity:0.5;cursor:not-allowed;}
+        
+        footer{border-top:1px solid #1f2937;padding:32px 0;text-align:center;color:#64748b;font-size:13px;margin-top:40px;}
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon"><svg viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="5" rx="1.5"/><rect x="8" y="1" width="5" height="5" rx="1.5"/><rect x="1" y="8" width="5" height="5" rx="1.5"/><rect x="8" y="8" width="5" height="5" rx="1.5"/></svg></div>
+            <div class="logo-text">Campaign<span>Desk</span></div>
+        </a>
+    </div>
+</header>
+
+<div class="container">
+    <div class="hero">
+        <h1>Start your campaign</h1>
+        <p>Choose the office you're seeking — this determines your pricing and available features</p>
+    </div>
+    
+    <div class="seat-grid" id="seatGrid">
+        <div class="seat-card" data-seat="mca" data-price="3000">
+            <div class="seat-badge">WARD LEVEL</div>
+            <h3>MCA</h3>
+            <div class="price">Ksh 3,000 <span>/month</span></div>
+            <ul class="feature-list">
+                <li>Ward-level member management</li>
+                <li>Up to 5 team members</li>
+                <li>Basic analytics</li>
+            </ul>
+        </div>
+        
+        <div class="seat-card" data-seat="mp" data-price="8000">
+            <div class="seat-badge">CONSTITUENCY LEVEL</div>
+            <h3>Member of Parliament</h3>
+            <div class="price">Ksh 8,000 <span>/month</span></div>
+            <ul class="feature-list">
+                <li>Constituency-wide tracking</li>
+                <li>Multi-ward coordination</li>
+                <li>Unlimited team members</li>
+            </ul>
+        </div>
+        
+        <div class="seat-card" data-seat="women_rep" data-price="15000">
+            <div class="seat-badge">COUNTY LEVEL</div>
+            <h3>Women Representative</h3>
+            <div class="price">Ksh 15,000 <span>/month</span></div>
+            <ul class="feature-list">
+                <li>County-wide member database</li>
+                <li>All wards & constituencies</li>
+                <li>Bulk SMS integration</li>
+            </ul>
+        </div>
+        
+        <div class="seat-card" data-seat="governor" data-price="20000">
+            <div class="seat-badge">COUNTY / REGIONAL</div>
+            <h3>Senator / Governor</h3>
+            <div class="price">Ksh 20,000 <span>/month</span></div>
+            <ul class="feature-list">
+                <li>Full county-wide operations</li>
+                <li>Unlimited everything</li>
+                <li>API access + priority support</li>
+            </ul>
+        </div>
+    </div>
+    
+    <button class="btn-continue" id="continueBtn" disabled>Continue to campaign setup →</button>
+</div>
+
+<footer>
+    <div class="container">
+        <p>© 2025 CampaignDesk — Built for Kenyan campaigns</p>
+    </div>
+</footer>
+
+<script>
+    let selectedSeat = null;
+    const cards = document.querySelectorAll('.seat-card');
+    const continueBtn = document.getElementById('continueBtn');
+    
+    cards.forEach(card => {
+        card.addEventListener('click', () => {
+            cards.forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedSeat = card.dataset.seat;
+            continueBtn.disabled = false;
+        });
+    });
+    
+    continueBtn.addEventListener('click', () => {
+        if (selectedSeat) {
+            window.location.href = `/signup/campaign?seat=${selectedSeat}`;
+        }
+    });
+</script>
+</body>
+</html>

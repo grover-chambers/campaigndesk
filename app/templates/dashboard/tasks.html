@@ -1,0 +1,101 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Tasks{% endblock %}
+{% block content %}
+
+<div class="actions-bar">
+  <button class="btn btn-primary" onclick="openModal('task')">✅ Create task</button>
+</div>
+
+<div class="filter-bar" style="margin-bottom:16px">
+  {% for s in ['all','pending','completed'] %}
+  <a href="?status={{ s }}" class="btn btn-sm {{ 'btn-primary' if status_filter==s else 'btn-ghost' }}">{{ s|title }}</a>
+  {% endfor %}
+</div>
+
+<div class="card" style="padding:0">
+  {% if all_tasks %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Task</th><th>Priority</th><th>Due date</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for t in all_tasks %}
+      {% set overdue = t.due_date and t.due_date < now and t.status == 'pending' %}
+      <tr style="{{ 'background:rgba(239,68,68,0.04)' if overdue }}">
+        <td>
+          <div style="font-weight:600;font-size:13px;color:{{ '#f87171' if overdue else 'var(--text)' }}">
+            {{ t.title }}
+            {% if overdue %}<span style="font-size:10px;margin-left:6px;color:#f87171">OVERDUE</span>{% endif %}
+          </div>
+          {% if t.description %}<div style="font-size:11px;color:var(--muted);margin-top:2px">{{ t.description[:80] }}{% if t.description|length > 80 %}…{% endif %}</div>{% endif %}
+        </td>
+        <td><span class="badge badge-{{ t.priority }}">{{ t.priority }}</span></td>
+        <td style="font-size:12px;color:{{ '#f87171' if overdue else 'var(--muted)' }}">
+          {{ t.due_date.strftime('%d %b %Y') if t.due_date else '—' }}
+        </td>
+        <td><span class="badge badge-{{ t.status }}">{{ t.status }}</span></td>
+        <td style="white-space:nowrap">
+          {% if t.status == 'pending' %}
+          <form method="POST" action="{{ url_for('dashboard.complete_task', tid=t.id) }}" style="display:inline">
+            <button type="submit" class="btn btn-sm btn-secondary">✓ Done</button>
+          </form>
+          {% endif %}
+          <form method="POST" action="{{ url_for('dashboard.delete_task', tid=t.id) }}" style="display:inline;margin-left:4px" onsubmit="return confirm('Delete this task?')">
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">✅</div>
+    No tasks found. Create your first task above.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-backdrop" id="modal-task">
+  <div class="modal">
+    <div class="modal-title">Create task</div>
+    <form method="POST" action="{{ url_for('dashboard.create_task') }}">
+      <div class="form-group">
+        <label class="form-label">Task title</label>
+        <input type="text" name="title" required placeholder="What needs to be done?">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" rows="2" placeholder="Any additional details…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select name="priority">
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Due date</label>
+          <input type="datetime-local" name="due_date">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('task')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create task</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function openModal(id){document.getElementById('modal-'+id).classList.add('open')}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open')}
+document.querySelectorAll('.modal-backdrop').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}))
+</script>
+{% endblock %}

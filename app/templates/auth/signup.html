@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start your campaign — CampaignDesk</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0a0f1a;color:#e2e8f0;}
+        .container{max-width:800px;margin:0 auto;padding:0 24px;}
+        
+        .header{background:#0a0f1a;border-bottom:1px solid #1f2937;padding:20px 0;margin-bottom:40px;}
+        .logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+        .logo-icon{width:32px;height:32px;background:#eab308;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+        .logo-icon svg{width:18px;height:18px;fill:#0a0f1a;}
+        .logo-text{font-size:20px;font-weight:800;color:white;}
+        .logo-text span{color:#eab308;}
+        
+        .tabs{display:flex;gap:8px;margin-bottom:32px;border-bottom:1px solid #1f2937;}
+        .tab{flex:1;padding:16px;text-align:center;background:transparent;border:none;color:#64748b;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;}
+        .tab.active{color:#eab308;border-bottom-color:#eab308;}
+        .tab.completed{color:#10b981;}
+        
+        .step-content{display:none;animation:fadeIn 0.3s ease;}
+        .step-content.active{display:block;}
+        
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+        
+        .form-card{background:#111827;border:1px solid #1f2937;border-radius:24px;padding:40px;margin-bottom:40px;}
+        .form-card h2{font-size:28px;margin-bottom:8px;}
+        .form-card p{color:#94a3b8;margin-bottom:32px;}
+        
+        .form-group{margin-bottom:24px;}
+        .form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:#cbd5e1;}
+        .form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 16px;background:#0a0f1a;border:1px solid #1f2937;border-radius:12px;color:white;font-size:14px;font-family:inherit;}
+        .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#eab308;}
+        .form-group textarea{min-height:80px;resize:vertical;}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+        
+        .seat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px;}
+        .seat-card{background:#0a0f1a;border:2px solid #1f2937;border-radius:16px;padding:20px;cursor:pointer;transition:all 0.2s;}
+        .seat-card:hover{border-color:#eab308;transform:translateY(-2px);}
+        .seat-card.selected{border-color:#eab308;background:rgba(234,179,8,0.1);}
+        .seat-card h3{font-size:18px;margin-bottom:4px;}
+        .price{font-size:20px;font-weight:700;color:#eab308;margin-top:8px;}
+        .price span{font-size:12px;color:#64748b;}
+        
+        .btn-group{display:flex;gap:16px;justify-content:space-between;margin-top:32px;}
+        .btn-prev{background:transparent;border:1px solid #1f2937;color:#94a3b8;padding:12px 24px;border-radius:40px;font-weight:600;cursor:pointer;}
+        .btn-next,.btn-submit{background:#eab308;color:#0a0f1a;border:none;padding:12px 32px;border-radius:40px;font-weight:700;font-size:14px;cursor:pointer;}
+        .btn-next:hover,.btn-submit:hover{background:#ca8a04;}
+        .btn-prev:hover{border-color:#eab308;color:#eab308;}
+        
+        .error-message{background:rgba(239,68,68,0.1);border:1px solid #ef4444;border-radius:12px;padding:12px;margin-bottom:20px;color:#ef4444;font-size:13px;display:none;}
+        
+        footer{border-top:1px solid #1f2937;padding:32px 0;text-align:center;color:#64748b;font-size:13px;margin-top:40px;}
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon"><svg viewBox="0 0 14 14"><rect x="1" y="1" width="5" height="5" rx="1.5"/><rect x="8" y="1" width="5" height="5" rx="1.5"/><rect x="1" y="8" width="5" height="5" rx="1.5"/><rect x="8" y="8" width="5" height="5" rx="1.5"/></svg></div>
+            <div class="logo-text">Campaign<span>Desk</span></div>
+        </a>
+    </div>
+</header>
+
+<div class="container">
+    <div class="tabs">
+        <button class="tab active" data-step="1">Step 1: Seat Level</button>
+        <button class="tab" data-step="2">Step 2: Campaign Details</button>
+        <button class="tab" data-step="3">Step 3: Campaign Manager</button>
+    </div>
+    
+    <div class="form-card">
+        <div id="errorMsg" class="error-message"></div>
+        
+        <form id="signupForm" method="POST" action="/auth/signup/submit">
+            <!-- Step 1 -->
+            <div class="step-content active" data-step="1">
+                <h2>Choose your seat</h2>
+                <p>Select the office you're seeking</p>
+                <div class="seat-grid">
+                    <div class="seat-card" data-seat="mca"><h3>MCA</h3><div class="price">Ksh 3,000 <span>/month</span></div></div>
+                    <div class="seat-card" data-seat="mp"><h3>Member of Parliament</h3><div class="price">Ksh 8,000 <span>/month</span></div></div>
+                    <div class="seat-card" data-seat="women_rep"><h3>Women Representative</h3><div class="price">Ksh 15,000 <span>/month</span></div></div>
+                    <div class="seat-card" data-seat="governor"><h3>Senator / Governor</h3><div class="price">Ksh 20,000 <span>/month</span></div></div>
+                </div>
+                <div class="btn-group"><div></div><button type="button" class="btn-next" onclick="nextStep()">Next →</button></div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="step-content" data-step="2">
+                <h2>Campaign details</h2>
+                <p>Tell us about the candidate</p>
+                <input type="hidden" name="seat_level" id="seatLevel">
+                
+                <div class="form-row">
+                    <div class="form-group"><label>Candidate's full name *</label><input type="text" name="candidate_name" required placeholder="e.g., Hon. Julius Were"></div>
+                    <div class="form-group"><label>Political party</label><select name="party" required><option value="">Select party</option><option value="ODM">ODM</option><option value="UDA">UDA</option><option value="Jubilee">Jubilee</option><option value="ANC">ANC</option><option value="Wiper">Wiper</option><option value="KANU">KANU</option><option value="Independent">Independent</option></select></div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group"><label>County *</label><select name="county" id="countySelect" required onchange="loadConstituencies()"><option value="">Select county</option></select></div>
+                    <div class="form-group"><label>Constituency *</label><select name="constituency" id="constituencySelect" required onchange="loadWards()"><option value="">Select constituency</option></select></div>
+                </div>
+                
+                <div class="form-group" id="wardGroup" style="display:none;"><label>Ward *</label><select name="ward" id="wardSelect"><option value="">Select ward</option></select></div>
+                <div class="form-group"><label>Campaign slogan</label><input type="text" name="slogan" placeholder="e.g., Better leadership for a better future"></div>
+                <div class="form-group"><label>Candidate bio</label><textarea name="bio" placeholder="A short bio about the candidate..."></textarea></div>
+                
+                <div class="btn-group"><button type="button" class="btn-prev" onclick="prevStep()">← Back</button><button type="button" class="btn-next" onclick="nextStep()">Next →</button></div>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="step-content" data-step="3">
+                <h2>Campaign Manager</h2>
+                <p>This person will manage the campaign dashboard</p>
+                <div class="form-row"><div class="form-group"><label>Full name *</label><input type="text" name="manager_name" required placeholder="e.g., Jane Akinyi"></div><div class="form-group"><label>Phone number *</label><input type="tel" name="manager_phone" required placeholder="0712345678"></div></div>
+                <div class="btn-group"><button type="button" class="btn-prev" onclick="prevStep()">← Back</button><button type="submit" class="btn-submit">Create campaign →</button></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<footer><div class="container"><p>© 2025 CampaignDesk — Built for Kenyan campaigns</p></div></footer>
+
+<script>
+    let selectedSeat = null;
+    let currentStep = 1;
+    
+    // Load counties on page load
+    async function loadCounties() {
+        try {
+            const response = await fetch('/api/counties');
+            const counties = await response.json();
+            const countySelect = document.getElementById('countySelect');
+            countySelect.innerHTML = '<option value="">Select county</option>';
+            counties.forEach(county => {
+                countySelect.innerHTML += `<option value="${county}">${county}</option>`;
+            });
+        } catch (err) {
+            console.error('Error loading counties:', err);
+        }
+    }
+    
+    async function loadConstituencies() {
+        const county = document.getElementById('countySelect').value;
+        const constituencySelect = document.getElementById('constituencySelect');
+        if (!county) {
+            constituencySelect.innerHTML = '<option value="">Select constituency</option>';
+            return;
+        }
+        try {
+            const response = await fetch(`/api/constituencies?county=${encodeURIComponent(county)}`);
+            const constituencies = await response.json();
+            constituencySelect.innerHTML = '<option value="">Select constituency</option>';
+            constituencies.forEach(constituency => {
+                constituencySelect.innerHTML += `<option value="${constituency}">${constituency}</option>`;
+            });
+            constituencySelect.disabled = false;
+        } catch (err) {
+            console.error('Error loading constituencies:', err);
+        }
+    }
+    
+    async function loadWards() {
+        const county = document.getElementById('countySelect').value;
+        const constituency = document.getElementById('constituencySelect').value;
+        const wardSelect = document.getElementById('wardSelect');
+        const seatLevel = document.getElementById('seatLevel').value;
+        
+        if (seatLevel !== 'mca') {
+            document.getElementById('wardGroup').style.display = 'none';
+            return;
+        }
+        if (!county || !constituency) return;
+        
+        try {
+            const response = await fetch(`/api/wards?county=${encodeURIComponent(county)}&constituency=${encodeURIComponent(constituency)}`);
+            const wards = await response.json();
+            wardSelect.innerHTML = '<option value="">Select ward</option>';
+            wards.forEach(ward => {
+                wardSelect.innerHTML += `<option value="${ward}">${ward}</option>`;
+            });
+            document.getElementById('wardGroup').style.display = 'block';
+        } catch (err) {
+            console.error('Error loading wards:', err);
+        }
+    }
+    
+    // Seat selection
+    document.querySelectorAll('.seat-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.seat-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            selectedSeat = card.dataset.seat;
+            document.getElementById('seatLevel').value = selectedSeat;
+        });
+    });
+    
+    function updateTabs() {
+        document.querySelectorAll('.tab').forEach((tab, index) => {
+            const stepNum = parseInt(tab.dataset.step);
+            if (stepNum < currentStep) tab.classList.add('completed');
+            else tab.classList.remove('completed');
+            if (stepNum === currentStep) tab.classList.add('active');
+            else tab.classList.remove('active');
+        });
+        document.querySelectorAll('.step-content').forEach(content => {
+            const stepNum = parseInt(content.dataset.step);
+            if (stepNum === currentStep) content.classList.add('active');
+            else content.classList.remove('active');
+        });
+    }
+    
+    function nextStep() {
+        if (currentStep === 1 && !selectedSeat) { showError('Please select a seat level'); return; }
+        if (currentStep === 2) {
+            const candidateName = document.querySelector('input[name="candidate_name"]').value;
+            const party = document.querySelector('select[name="party"]').value;
+            const county = document.querySelector('select[name="county"]').value;
+            const constituency = document.querySelector('select[name="constituency"]').value;
+            if (!candidateName || !party || !county || !constituency) { showError('Please fill all required fields'); return; }
+            if (selectedSeat === 'mca') { const ward = document.querySelector('select[name="ward"]').value; if (!ward) { showError('Please select your ward'); return; } }
+        }
+        if (currentStep < 3) { currentStep++; updateTabs(); hideMessages(); }
+    }
+    
+    function prevStep() { if (currentStep > 1) { currentStep--; updateTabs(); hideMessages(); } }
+    function showError(msg) { const d = document.getElementById('errorMsg'); d.textContent = msg; d.style.display = 'block'; setTimeout(() => d.style.display = 'none', 3000); }
+    function hideMessages() { document.getElementById('errorMsg').style.display = 'none'; }
+    
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        try {
+            const response = await fetch('/auth/signup/submit', { method: 'POST', body: formData });
+            if (response.redirected) window.location.href = response.url;
+            else { const data = await response.json(); showError(data.error || 'Something went wrong'); }
+        } catch (err) { showError('Network error. Please try again.'); }
+    });
+    
+    loadCounties();
+</script>
+</body>
+</html>

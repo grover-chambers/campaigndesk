@@ -1,0 +1,53 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Manifesto{% endblock %}
+{% block content %}
+
+<div class="two-col" style="align-items:start">
+  <div>
+    <div class="card">
+      <div class="card-title">📜 Campaign manifesto</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.7">
+        Write your candidate's public commitments here. This is stored internally and can be referenced by your team. Use the format below or write freely.
+      </p>
+      <form method="POST" action="{{ url_for('dashboard.save_manifesto') }}">
+        <div class="form-group">
+          <textarea name="manifesto" rows="18" placeholder="e.g.&#10;INFRASTRUCTURE&#10;- Tarmac all access roads in Kayole ward&#10;- Install 200 streetlights along Mowlem Road&#10;&#10;HEALTH&#10;- Upgrade Kayole Health Centre to Level 4&#10;- Free maternal healthcare for all ward residents&#10;&#10;YOUTH&#10;- Establish a youth skills centre in each village&#10;- Partner with NITA for free ICT training">{{ campaign.manifesto or '' }}</textarea>
+        </div>
+        <div style="display:flex;gap:10px">
+          <button type="submit" class="btn btn-primary">Save manifesto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-title">💡 Tips</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.8">
+        <p style="margin-bottom:10px">Organise by sector — Roads, Health, Water, Youth, Women, Education, Security.</p>
+        <p style="margin-bottom:10px">Be specific. "Tarmac 3km of Mowlem Road" is stronger than "improve roads".</p>
+        <p style="margin-bottom:10px">Use short bullet points. Each pledge should be one sentence.</p>
+        <p>Once written, post individual pledges to the bulletin board using the <strong>Pledge</strong> tag so supporters can see them on the noticeboard.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0">
+      <div class="card-title">📢 Post a pledge to bulletin board</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Turn a manifesto commitment into a public bulletin that supporters can see.</p>
+      <form method="POST" action="{{ url_for('dashboard.create_bulletin') }}">
+        <div class="form-group">
+          <label class="form-label">Pledge title</label>
+          <input type="text" name="title" placeholder="e.g. Free maternal healthcare for all residents">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Details</label>
+          <textarea name="content" rows="3" placeholder="Describe the commitment in more detail…"></textarea>
+        </div>
+        <input type="hidden" name="tag" value="pledge">
+        <input type="hidden" name="is_public" value="on">
+        <button type="submit" class="btn btn-primary btn-sm">Post as pledge →</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

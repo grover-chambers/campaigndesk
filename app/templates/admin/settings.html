@@ -1,0 +1,40 @@
+{% extends 'admin/base.html' %}
+{% block page_title %}Settings{% endblock %}
+{% block content %}
+<div style="max-width:500px">
+  <div class="card">
+    <div class="card-title">👤 Admin account</div>
+    <div style="font-size:13px;line-height:2;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--subtle)">
+        <span style="color:var(--muted)">Email</span><span>{{ admin.email }}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:8px 0">
+        <span style="color:var(--muted)">Role</span><span class="badge badge-trial">Superadmin</span>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Change password</div>
+      <form method="POST">
+        <div class="form-group"><label class="form-label">New password</label><input type="password" name="new_password" placeholder="Min 8 characters"></div>
+        <div class="form-group"><label class="form-label">Confirm password</label><input type="password" name="confirm_password" placeholder="Repeat new password"></div>
+        <button type="submit" class="btn btn-primary">Update password</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💰 Tier pricing reference</div>
+    <div style="font-size:13px;line-height:2.2">
+      {% for tier, price, desc in [('Starter','Ksh 2,500 / month','MCAs & ward-level'),('Constituency','Ksh 8,000 / month','MPs & Women Reps'),('County','Custom','Senators & Governors')] %}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--subtle)">
+        <div>
+          <div style="font-weight:600">{{ tier }}</div>
+          <div style="font-size:11px;color:var(--muted)">{{ desc }}</div>
+        </div>
+        <span style="color:var(--accent);font-weight:600">{{ price }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}WhatsApp Broadcast{% endblock %}
+{% block content %}
+
+<div class="two-col" style="align-items:start">
+  <div>
+    {% if wa_status.error %}
+    <div class="card" style="border-color:rgba(239,68,68,0.3)">
+      <div class="card-title" style="color:#f87171">⚠ Bridge offline</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.7">{{ wa_status.error }}</p>
+      <div style="background:var(--bg3);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;color:var(--muted)">
+        cd ~/campaigndesk/whatsapp<br>node server.js
+      </div>
+    </div>
+    {% elif not wa_status.ready %}
+    <div class="card">
+      <div class="card-title">📱 Connect WhatsApp</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.7">
+        Scan the QR code below with WhatsApp on your phone.<br>
+        Go to <strong>WhatsApp → Linked Devices → Link a Device</strong>
+      </p>
+      <div id="qr-wrap" style="text-align:center;padding:20px">
+        <div id="qr-loading" style="color:var(--muted);font-size:13px">Loading QR code…</div>
+        <img id="qr-img" style="display:none;max-width:240px;border-radius:12px;border:1px solid var(--border)">
+      </div>
+      <button onclick="refreshQR()" class="btn btn-secondary btn-sm" style="width:100%">↺ Refresh QR</button>
+    </div>
+    {% else %}
+    <div class="card" style="border-color:rgba(34,197,94,0.3)">
+      <div class="card-title" style="color:#4ade80">✓ WhatsApp connected</div>
+      <div style="font-size:13px;line-height:2">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--subtle)">
+          <span style="color:var(--muted)">Phone</span>
+          <span style="font-weight:600">+{{ wa_status.phone }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0">
+          <span style="color:var(--muted)">Name</span>
+          <span>{{ wa_status.name }}</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-title">📊 Reach</div>
+      <div style="font-size:13px;line-height:2.2">
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--subtle)">
+          <span style="color:var(--muted)">All supporters</span>
+          <span style="font-weight:700">{{ supporters|length }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--subtle)">
+          <span style="color:var(--muted)">Officials only</span>
+          <span>{{ supporters|selectattr('member_type','eq','official')|list|length }}</span>
+        </div>
+        {% for w in wards %}
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--subtle)">
+          <span style="color:var(--muted)">{{ w }} ward</span>
+          <span>{{ supporters|selectattr('ward','eq',w)|list|length }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-title">📤 Send broadcast</div>
+      {% if not wa_status.ready and not wa_status.error %}
+      <p style="font-size:13px;color:#f87171;margin-bottom:12px">Connect WhatsApp first before sending.</p>
+      {% endif %}
+      <form method="POST" action="{{ url_for('dashboard.whatsapp_send') }}">
+        <div class="form-group">
+          <label class="form-label">Recipients</label>
+          <select name="recipient" id="recipient-sel" onchange="toggleWard(this.value)">
+            <option value="all">All supporters ({{ supporters|length }})</option>
+            <option value="officials">Officials only</option>
+            <option value="ward">Specific ward</option>
+          </select>
+        </div>
+        <div class="form-group" id="ward-select" style="display:none">
+          <label class="form-label">Select ward</label>
+          <select name="ward">
+            {% for w in wards %}<option value="{{ w }}">{{ w }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea name="message" rows="6" required placeholder="Type your broadcast message here…&#10;&#10;Tip: Keep it under 1000 characters for best delivery."></textarea>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:14px">
+          Messages are sent individually to each phone number. This may take a minute for large lists.
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%" {{ 'disabled' if not wa_status.ready }}>
+          📤 Send broadcast
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleWard(val){
+  document.getElementById('ward-select').style.display = val==='ward' ? 'block' : 'none'
+}
+async function refreshQR(){
+  const res = await fetch("{{ url_for('dashboard.whatsapp_qr') }}")
+  const data = await res.json()
+  if(data.ready){ location.reload(); return }
+  if(data.qr){
+    document.getElementById('qr-loading').style.display='none'
+    const img = document.getElementById('qr-img')
+    img.src = data.qr
+    img.style.display = 'block'
+  } else {
+    document.getElementById('qr-loading').textContent = data.message || 'Generating QR…'
+  }
+}
+{% if not wa_status.ready and not wa_status.error %}
+refreshQR()
+setInterval(()=>{
+  fetch("{{ url_for('dashboard.whatsapp_qr') }}").then(r=>r.json()).then(d=>{
+    if(d.ready) location.reload()
+  })
+}, 5000)
+{% endif %}
+</script>
+{% endblock %}

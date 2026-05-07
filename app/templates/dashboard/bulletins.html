@@ -1,0 +1,100 @@
+{% extends 'dashboard/base.html' %}
+{% block page_title %}Bulletin Board{% endblock %}
+{% block content %}
+
+<div class="actions-bar">
+  <button class="btn btn-primary" onclick="openModal('bulletin')">📢 Post bulletin</button>
+  <a href="/c/{{ campaign.slug }}/board" target="_blank" class="btn btn-ghost">↗ View public noticeboard</a>
+</div>
+
+<div class="filter-bar">
+  {% for tag in ['all','update','pledge','event'] %}
+  <a href="?tag={{ tag }}" class="btn btn-sm {{ 'btn-primary' if tag_filter==tag else 'btn-ghost' }}">{{ tag|title }}</a>
+  {% endfor %}
+</div>
+
+<div class="card" style="padding:0">
+  {% if bulletins %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Title</th><th>Tag</th><th>Visibility</th><th>Posted</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+      {% for b in bulletins %}
+      <tr>
+        <td>
+          <div style="font-weight:600;font-size:13px">{{ b.title }}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">{{ b.content[:80] }}{% if b.content|length > 80 %}…{% endif %}</div>
+        </td>
+        <td><span class="badge badge-{{ b.tag }}">{{ b.tag }}</span></td>
+        <td>
+          <form method="POST" action="{{ url_for('dashboard.toggle_bulletin_public', bid=b.id) }}" style="display:inline">
+            <button type="submit" class="badge {{ 'badge-public' if b.is_public else 'badge-internal' }}" style="border:none;cursor:pointer;background:none;padding:3px 9px">
+              {{ '🌐 Public' if b.is_public else '🔒 Internal' }}
+            </button>
+          </form>
+        </td>
+        <td style="color:var(--muted);font-size:12px">{{ b.created_at.strftime('%d %b %Y') }}</td>
+        <td>
+          <form method="POST" action="{{ url_for('dashboard.delete_bulletin', bid=b.id) }}" onsubmit="return confirm('Delete this bulletin?')">
+            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">📢</div>
+    No bulletins yet. Post your first update above.
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-backdrop" id="modal-bulletin">
+  <div class="modal">
+    <div class="modal-title">Post bulletin</div>
+    <form method="POST" action="{{ url_for('dashboard.create_bulletin') }}">
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" name="title" required placeholder="What's the update?">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Content</label>
+        <textarea name="content" rows="5" required placeholder="Write the full bulletin content here…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tag</label>
+          <select name="tag">
+            <option value="update">Update</option>
+            <option value="pledge">Pledge</option>
+            <option value="event">Event</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Visibility</label>
+          <div class="form-check" style="margin-top:10px">
+            <input type="checkbox" name="is_public" id="bp" checked>
+            <label for="bp">Post to public noticeboard</label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('bulletin')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Post bulletin</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function openModal(id){document.getElementById('modal-'+id).classList.add('open')}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open')}
+document.querySelectorAll('.modal-backdrop').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}))
+</script>
+{% endblock %}
