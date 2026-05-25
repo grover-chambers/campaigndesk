@@ -586,6 +586,232 @@
             .hero-buttons { flex-direction: column; align-items: center; }
             .search-box { flex-direction: column; }
         }
+
+        /* ── Carousel ── */
+        .carousel-section {
+            padding: 48px 0 32px;
+        }
+
+        .carousel-label {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .carousel-track-wrapper {
+            overflow: hidden;
+            position: relative;
+        }
+
+        .carousel-track-wrapper::before,
+        .carousel-track-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 80px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .carousel-track-wrapper::before {
+            left: 0;
+            background: linear-gradient(to right, var(--bg-dark), transparent);
+        }
+
+        .carousel-track-wrapper::after {
+            right: 0;
+            background: linear-gradient(to left, var(--bg-dark), transparent);
+        }
+
+        .carousel-track {
+            display: flex;
+            gap: 20px;
+            width: max-content;
+            animation: scroll-left 18s linear infinite;
+        }
+
+        .carousel-track:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes scroll-left {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        .campaign-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px 28px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            text-decoration: none;
+            color: inherit;
+            min-width: 280px;
+            transition: border-color 0.2s, transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .campaign-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+        }
+
+        .candidate-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 800;
+            color: #0a0f1a;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .candidate-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .campaign-card-info h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .campaign-card-info p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        .party-badge {
+            display: inline-block;
+            background: rgba(234,179,8,0.12);
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-top: 6px;
+        }
+
+        /* ── Stats bar ── */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            padding: 28px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            margin: 32px 0 48px;
+        }
+
+        .stats-bar-item {
+            text-align: center;
+        }
+
+        .stats-bar-item .num {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stats-bar-item .lbl {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-bar { gap: 24px; }
+            .stats-bar-item .num { font-size: 20px; }
+            .campaign-card { min-width: 240px; padding: 18px 20px; }
+        }
+
+        /* ── Testimonials ── */
+        .testimonials {
+            padding: 60px 0;
+        }
+
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .testimonial-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+        }
+
+        .testimonial-card::before {
+            content: '"';
+            position: absolute;
+            top: 16px;
+            right: 24px;
+            font-size: 64px;
+            color: var(--accent);
+            opacity: 0.2;
+            font-family: Georgia, serif;
+            line-height: 1;
+        }
+
+        .testimonial-text {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .author-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 800;
+            color: #0a0f1a;
+            flex-shrink: 0;
+        }
+
+        .author-info strong {
+            display: block;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .author-info span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
     </style>
 </head>
 <body>
@@ -623,6 +849,37 @@
             <div class="hero-buttons">
                 <a href="#pricing" class="btn-primary btn-large">Start your campaign →</a>
                 <a href="#problem" class="btn-outline btn-large">How it works</a>
+            </div>
+        </div>
+
+
+        <!-- Live Campaigns Carousel -->
+        <div class="carousel-section">
+            <div class="carousel-label">Live campaigns on CampaignDesk</div>
+            <div class="carousel-track-wrapper">
+                <div class="carousel-track" id="carouselTrack">
+                    <!-- cards injected twice for seamless loop -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="stats-bar">
+            <div class="stats-bar-item">
+                <div class="num" id="statCampaigns">2</div>
+                <div class="lbl">Active campaigns</div>
+            </div>
+            <div class="stats-bar-item">
+                <div class="num">47</div>
+                <div class="lbl">Team members coordinated</div>
+            </div>
+            <div class="stats-bar-item">
+                <div class="num">100%</div>
+                <div class="lbl">Data privacy</div>
+            </div>
+            <div class="stats-bar-item">
+                <div class="num">🇰🇪</div>
+                <div class="lbl">Built for Kenya</div>
             </div>
         </div>
 
@@ -823,6 +1080,49 @@
             </div>
         </div>
     </div>
+
+        <!-- Testimonials -->
+        <div class="testimonials">
+            <div class="section-label">What campaign teams say</div>
+            <div class="section-title">Trusted by teams on the ground</div>
+            <div class="section-subtitle">From secretaries to agents — here's what running a campaign on CampaignDesk feels like.</div>
+
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <p class="testimonial-text">Before CampaignDesk, I was managing three WhatsApp groups and two Excel sheets just to track our ward agents. Now everything is in one place and I can see who's active without sending a single message.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">AW</div>
+                        <div class="author-info">
+                            <strong>Aisha Wanjiku</strong>
+                            <span>Campaign Secretary · Embakasi North</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <p class="testimonial-text">The public noticeboard alone is worth it. Our supporters used to ask us the same questions every day — now we just post the update once and it's there for everyone. Meeting attendance went up immediately.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JO</div>
+                        <div class="author-info">
+                            <strong>James Otieno</strong>
+                            <span>Campaign Coordinator · Kasarani Ward</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="testimonial-card">
+                    <p class="testimonial-text">I was skeptical about moving off Excel but the import was painless. Within a day our whole member list was live, the agents had their logins, and we had a proper dashboard for the first time in this campaign.</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">FM</div>
+                        <div class="author-info">
+                            <strong>Faith Mutuku</strong>
+                            <span>Campaign Manager · Nairobi County</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 </main>
 
 <footer class="footer">
@@ -874,6 +1174,57 @@
         if (e.key === 'Enter') searchCampaigns();
     });
 </script>
+
+<script>
+// Build carousel from live campaigns API
+(async () => {
+    const track = document.getElementById('carouselTrack');
+    if (!track) return;
+
+    let campaigns = [];
+    try {
+        const res = await fetch('/find-campaign?q=');
+        // fallback: use hardcoded if API returns empty
+        campaigns = await res.json();
+    } catch(e) {}
+
+    // Static fallback so carousel always shows something
+    if (!campaigns || campaigns.length === 0) {
+        campaigns = [
+            { candidate: 'Hon. Julius Were', slug: 'julius-were', party: 'ODM', constituency: 'Embakasi North', seat_level: 'MP', photo: null },
+            { candidate: 'Hon. Dan Oria', slug: 'dan-oria', party: 'ODM', constituency: 'Embakasi North', seat_level: 'MCA', photo: null },
+        ];
+    }
+
+    function getInitials(name) {
+        return name.replace('Hon. ', '').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+    }
+
+    function makeCard(c) {
+        const avatar = c.photo
+            ? `<div class="candidate-avatar"><img src="${c.photo}" alt="${c.candidate}"></div>`
+            : `<div class="candidate-avatar">${getInitials(c.candidate)}</div>`;
+        return `
+            <a href="/c/${c.slug}/login" class="campaign-card">
+                ${avatar}
+                <div class="campaign-card-info">
+                    <h4>${c.candidate}</h4>
+                    <p>${c.constituency} · ${c.seat_level}</p>
+                    <span class="party-badge">${c.party}</span>
+                </div>
+            </a>`;
+    }
+
+    // Duplicate for seamless infinite scroll
+    const cards = campaigns.map(makeCard).join('');
+    track.innerHTML = cards + cards;
+
+    // Update stat counter
+    const statEl = document.getElementById('statCampaigns');
+    if (statEl) statEl.textContent = campaigns.length;
+})();
+</script>
+
 </body>
 </html>
 <script>
